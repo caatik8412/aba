@@ -196,16 +196,20 @@ tr:hover td{background:var(--bg)}
 
    <!-- TASKS -->
    <div class="page" id="p-tasks">
+    <div class="tabs" id="task-tabs">
+     <div class="tab active" onclick="switchTaskTab('active',this)">Pending / In Progress</div>
+     <div class="tab" onclick="switchTaskTab('done',this)">Completed</div>
+    </div>
     <div class="fr">
      <input class="si" type="text" id="tq" placeholder="Search tasks..." oninput="renderTasks()">
      <select class="btn" id="tcl" onchange="renderTasks()"><option value="">All clients</option></select>
      <select class="btn" id="twh" onchange="renderTasks()"><option value="">All staff</option><option>Atik Bhayani</option><option>Rushiraj</option><option>Sahil</option></select>
-     <select class="btn" id="tst" onchange="renderTasks()"><option value="">All status</option><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="done">Done</option></select>
+     <select class="btn" id="tst" onchange="renderTasks()" id="tst-sel"><option value="">All status</option><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="done">Done</option></select>
      <select class="btn" id="tcat" onchange="renderTasks()"><option value="">All categories</option><option>GST</option><option>TDS</option><option>Income Tax</option><option>ROC / MCA</option><option>PF / ESIC</option><option>Audit</option></select>
-     <button class="btn btnd" onclick="openTaskModal()">+ Add Task</button>
+     <button class="btn btnd" id="add-task-btn" onclick="openTaskModal()">+ Add Task</button>
     </div>
     <div class="card"><div class="tw"><table>
-     <thead><tr><th></th><th>Task</th><th>Client</th><th>Category</th><th>Assigned to</th><th>Due date</th><th>Status</th><th>Remarks</th><th>Actions</th></tr></thead>
+     <thead><tr id="ttb-head"><th></th><th>Task</th><th>Client</th><th>Category</th><th>Assigned to</th><th>Due date</th><th>Status</th><th>Remarks</th><th>Actions</th></tr></thead>
      <tbody id="ttb"></tbody>
     </table></div></div>
    </div>
@@ -281,10 +285,14 @@ tr:hover td{background:var(--bg)}
 
    <!-- MY TASKS (Staff) -->
    <div class="page" id="p-mine">
+    <div class="tabs" id="mine-tabs">
+     <div class="tab active" onclick="switchMineTab('active',this)">Pending / In Progress</div>
+     <div class="tab" onclick="switchMineTab('done',this)">Completed</div>
+    </div>
     <div class="fr">
      <select class="btn" id="mcl" onchange="renderMine()"><option value="">All clients</option></select>
      <select class="btn" id="mst" onchange="renderMine()"><option value="">All status</option><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="done">Done</option></select>
-     <button class="btn btnd" onclick="openTaskModal()">+ Add My Task</button>
+     <button class="btn btnd" id="add-mine-btn" onclick="openTaskModal()">+ Add My Task</button>
     </div>
     <div class="g3" id="mstat"></div>
     <div class="card"><div class="tw"><table>
@@ -429,6 +437,8 @@ var DOCS = [];
 var PENDING_DOCS = [];
 var DD_CAT = 'all';
 var GST_TICKS = {};
+var TASK_TAB = 'active';
+var MINE_TAB = 'active';
 
 function api(action, data) {
   if (!data) data = {};
@@ -479,7 +489,7 @@ function startAutoRefresh() {
     var active = document.activeElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
     silentRefresh();
-  }, 60000); // 60 seconds
+  }, 60000);
 }
 
 function stopAutoRefresh() {
@@ -510,7 +520,7 @@ function silentRefresh() {
       st.textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
       setTimeout(function() { if(st) st.textContent = 'Live'; }, 3000);
     }
-  }).catch(function() {}); // silent fail - don't show errors for background refresh
+  }).catch(function() {}); // silent fail - no errors for background refresh
 }
 
 function doLogout() {
@@ -649,37 +659,70 @@ function renderDash() {
 }
 
 // ---- TASKS ----
+function switchTaskTab(tab, el) {
+  TASK_TAB = tab;
+  document.querySelectorAll('#task-tabs .tab').forEach(function(t) { t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  // Show/hide add button on completed tab
+  var addBtn = document.getElementById('add-task-btn');
+  if (addBtn) addBtn.style.display = tab === 'done' ? 'none' : 'block';
+  // Update status filter
+  var tst = document.getElementById('tst');
+  if (tst) {
+    if (tab === 'done') { tst.value = 'done'; tst.style.display = 'none'; }
+    else { tst.value = ''; tst.style.display = 'block'; }
+  }
+  renderTasks();
+}
+
 function renderTasks() {
-  var q  = (document.getElementById('tq')||{value:''}).value.toLowerCase();
-  var fc = (document.getElementById('tcl')||{value:''}).value;
-  var fw = (document.getElementById('twh')||{value:''}).value;
-  var fs = (document.getElementById('tst')||{value:''}).value;
-  var fc2= (document.getElementById('tcat')||{value:''}).value;
-  var t  = TASKS.slice();
-  if (q)  t = t.filter(function(x) { return x.name.toLowerCase().indexOf(q)>-1 || (x.client_name||'').toLowerCase().indexOf(q)>-1; });
-  if (fc) t = t.filter(function(x) { return x.client_id === fc; });
-  if (fw) t = t.filter(function(x) { return x.assignee === fw; });
-  if (fs) t = t.filter(function(x) { return x.status === fs; });
-  if (fc2)t = t.filter(function(x) { return x.category === fc2; });
+  var q   = (document.getElementById('tq')||{value:''}).value.toLowerCase();
+  var fc  = (document.getElementById('tcl')||{value:''}).value;
+  var fw  = (document.getElementById('twh')||{value:''}).value;
+  var fs  = (document.getElementById('tst')||{value:''}).value;
+  var fc2 = (document.getElementById('tcat')||{value:''}).value;
+  var t   = TASKS.slice();
+
+  // Filter by tab
+  if (TASK_TAB === 'done') {
+    t = t.filter(function(x) { return x.status === 'done'; });
+  } else {
+    t = t.filter(function(x) { return x.status !== 'done'; });
+    if (fs) t = t.filter(function(x) { return x.status === fs; });
+  }
+
+  if (q)   t = t.filter(function(x) { return x.name.toLowerCase().indexOf(q)>-1 || (x.client_name||'').toLowerCase().indexOf(q)>-1; });
+  if (fc)  t = t.filter(function(x) { return x.client_id === fc; });
+  if (fw)  t = t.filter(function(x) { return x.assignee === fw; });
+  if (fc2) t = t.filter(function(x) { return x.category === fc2; });
   t.sort(function(a,b) { return new Date(a.due_date)-new Date(b.due_date); });
+
+  var isAdmin = CU && CU.role === 'admin';
+  var isDoneTab = TASK_TAB === 'done';
   var body = document.getElementById('ttb'); if (!body) return;
   body.innerHTML = t.length ? t.map(function(tk) {
-    return '<tr>'+
+    var actions = '<button class="btn btns" onclick="openEditTask(''+tk.id+'')">Edit</button>';
+    if (isDoneTab) {
+      actions += '<button class="btn btns" style="background:var(--am-bg);color:var(--am);border-color:var(--am)" onclick="revertTask(''+tk.id+'')">Revert to Pending</button>';
+    } else {
+      actions += '<button class="btn btns" onclick="mkDone(''+tk.id+'')">Done</button>';
+    }
+    if (isAdmin) {
+      actions += '<button class="btn btns btnr" onclick="delTask(''+tk.id+'')">Del</button>';
+    }
+    return '<tr'+(isDoneTab?' style="background:var(--gr-bg)"':'')+'>'+
       '<td>'+pdot(tk.priority,tk.status)+'</td>'+
       '<td style="font-weight:500;min-width:160px">'+esc(tk.name)+'</td>'+
       '<td style="font-size:12px;color:var(--t2)">'+esc(tk.client_name||'')+'</td>'+
       '<td>'+catBdg(tk.category)+'</td>'+
       '<td>'+whoBdg(tk.assignee)+'</td>'+
-      '<td '+dueStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
       '<td>'+stBdg(tk.status)+'</td>'+
-      '<td><input class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(\''+tk.id+'\',this.value)"></td>'+
-      '<td style="white-space:nowrap;display:flex;gap:4px">'+
-      '<button class="btn btns" onclick="openEditTask(\''+tk.id+'\')">Edit</button>'+
-      (tk.status!=='done'?'<button class="btn btns" onclick="mkDone(\''+tk.id+'\')">Done</button>':'')+
-      '<button class="btn btns btnr" onclick="delTask(\''+tk.id+'\')">Del</button>'+
-      '</td></tr>';
-  }).join('') : '<tr><td colspan="9"><div class="emp"><div class="empt">No tasks found</div></div></td></tr>';
+      '<td><input class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(''+tk.id+'',this.value)"></td>'+
+      '<td style="white-space:nowrap;display:flex;gap:4px">'+actions+'</td></tr>';
+  }).join('') : '<tr><td colspan="9"><div class="emp"><div class="empt">'+(isDoneTab?'No completed tasks yet':'No pending tasks - all done!')+'</div></div></td></tr>';
 }
+
 
 function qRemark(id, val) {
   var t = TASKS.filter(function(x){return x.id===id;})[0]; if (!t) return;
@@ -695,6 +738,17 @@ function mkDone(id) {
   t.status = 'done'; setSyn(true);
   api('updateTask', t).then(function() { setSyn(false); renderTasks(); renderDash(); });
 }
+function revertTask(id, newStatus) {
+  var t = TASKS.filter(function(x){return x.id===id;})[0]; if(!t) return;
+  t.status = newStatus || 'pending';
+  setSyn(true);
+  api('updateTask', t).then(function() {
+    setSyn(false);
+    renderTasks();
+    renderDash();
+  });
+}
+
 function delTask(id) {
   if (!confirm('Delete this task?')) return;
   setSyn(true);
@@ -879,36 +933,61 @@ function createYearlyTasks() {
 }
 
 // ---- MY TASKS (Staff) ----
+function switchMineTab(tab, el) {
+  MINE_TAB = tab;
+  document.querySelectorAll('#mine-tabs .tab').forEach(function(t) { t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  var addBtn = document.getElementById('add-mine-btn');
+  if (addBtn) addBtn.style.display = tab === 'done' ? 'none' : 'block';
+  renderMine();
+}
+
 function renderMine() {
   var fc = (document.getElementById('mcl')||{value:''}).value;
   var fs = (document.getElementById('mst')||{value:''}).value;
   var my = TASKS.filter(function(t){return t.assignee===CU.name;});
+
+  // Filter by tab
+  if (MINE_TAB === 'done') {
+    my = my.filter(function(t){return t.status==='done';});
+  } else {
+    my = my.filter(function(t){return t.status!=='done';});
+    if (fs) my = my.filter(function(t){return t.status===fs;});
+  }
+
   if (fc) my = my.filter(function(t){return t.client_id===fc;});
-  if (fs) my = my.filter(function(t){return t.status===fs;});
   my.sort(function(a,b){return new Date(a.due_date)-new Date(b.due_date);});
-  var ov = my.filter(function(t){return t.status!=='done'&&isOD(t.due_date);}).length;
-  var sw = my.filter(function(t){return t.status!=='done'&&isSoon(t.due_date);}).length;
-  var dn = my.filter(function(t){return t.status==='done';}).length;
+
+  var ov = TASKS.filter(function(t){return t.assignee===CU.name&&t.status!=='done'&&isOD(t.due_date);}).length;
+  var sw = TASKS.filter(function(t){return t.assignee===CU.name&&t.status!=='done'&&isSoon(t.due_date);}).length;
+  var dn = TASKS.filter(function(t){return t.assignee===CU.name&&t.status==='done';}).length;
   document.getElementById('mstat').innerHTML =
     '<div class="sc"><div class="sl">Overdue</div><div class="sv" style="color:var(--rd)">'+ov+'</div></div>'+
     '<div class="sc"><div class="sl">Due this week</div><div class="sv" style="color:var(--am)">'+sw+'</div></div>'+
     '<div class="sc"><div class="sl">Completed</div><div class="sv" style="color:var(--gr)">'+dn+'</div></div>';
+
+  var isDoneTab = MINE_TAB === 'done';
   var body = document.getElementById('mtb'); if(!body) return;
   body.innerHTML = my.length ? my.map(function(tk) {
-    return '<tr>'+
+    var actions = '<button class="btn btns" onclick="openEditTask(''+tk.id+'')">Edit</button>';
+    if (isDoneTab) {
+      actions += '<button class="btn btns" style="background:var(--am-bg);color:var(--am);border-color:var(--am)" onclick="revertTask(''+tk.id+'')">Revert</button>';
+    } else {
+      actions += '<button class="btn btns" onclick="stfDone(''+tk.id+'')">Done</button>';
+    }
+    return '<tr'+(isDoneTab?' style="background:var(--gr-bg)"':'')+'>'+
       '<td>'+pdot(tk.priority,tk.status)+'</td>'+
       '<td style="font-weight:500;min-width:150px">'+esc(tk.name)+'</td>'+
       '<td style="font-size:12px;color:var(--t2)">'+esc(tk.client_name||'')+'</td>'+
       '<td>'+catBdg(tk.category)+'</td>'+
       '<td '+dueStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
       '<td>'+stBdg(tk.status)+'</td>'+
-      '<td><input class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(\''+tk.id+'\',this.value)"></td>'+
-      '<td style="white-space:nowrap;display:flex;gap:4px">'+
-      '<button class="btn btns" onclick="openEditTask(\''+tk.id+'\')">Edit</button>'+
-      (tk.status!=='done'?'<button class="btn btns" onclick="stfDone(\''+tk.id+'\')">Done</button>':'')+
-      '</td></tr>';
-  }).join('') : '<tr><td colspan="8"><div class="emp"><div class="empt">No tasks found</div></div></td></tr>';
+      '<td><input class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(''+tk.id+'',this.value)"></td>'+
+      '<td style="white-space:nowrap;display:flex;gap:4px">'+actions+'</td></tr>';
+  }).join('') : '<tr><td colspan="8"><div class="emp"><div class="empt">'+(isDoneTab?'No completed tasks yet':'No pending tasks - all done!')+'</div></div></td></tr>';
 }
+
+
 function stfDone(id) {
   var t = TASKS.filter(function(x){return x.id===id;})[0]; if(!t) return;
   if (!t.remarks||t.remarks.trim()==='') { alert('Please add a remark before marking done.'); return; }

@@ -178,7 +178,7 @@ tr:hover td{background:var(--bg)}
    <div class="tbar">
     <div class="ttl" id="pgt">Dashboard</div>
     <div class="trt">
-     <div class="syn"><div class="sdot" id="sd"></div><span id="st">Synced</span></div>
+     <div class="syn"><div class="sdot" id="sd"></div><span id="st">Synced</span></div><button class="btn btns" onclick="silentRefresh()" title="Refresh now" style="padding:4px 10px;font-size:11px">Refresh</button>
      <div id="pga"></div>
     </div>
    </div>
@@ -421,7 +421,7 @@ tr:hover td{background:var(--bg)}
 </div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbwJixV5AfYS9yLOcbiQBxNncJq9RP5JhyLXihMkKpNZ31su1g9BjR7wB_ppwTW_ABQ/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbz5MDOkmg21onOQvbnXDDmNl7UQCg83vxpHKBaPq45ykYVun2CqXn9LTZIdUEiVT1Xh/exec';
 var CU = null;
 var CLIENTS = [];
 var TASKS = [];
@@ -462,6 +462,7 @@ function doLogin() {
       document.getElementById('ls').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       setupShell();
+      startAutoRefresh();
     });
   }).catch(function(e) {
     err.textContent = 'Error: ' + e.message;
@@ -469,7 +470,51 @@ function doLogin() {
   });
 }
 
+var AUTO_REFRESH_TIMER = null;
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  AUTO_REFRESH_TIMER = setInterval(function() {
+    // Skip if user is typing in any input
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    silentRefresh();
+  }, 60000); // 60 seconds
+}
+
+function stopAutoRefresh() {
+  if (AUTO_REFRESH_TIMER) { clearInterval(AUTO_REFRESH_TIMER); AUTO_REFRESH_TIMER = null; }
+}
+
+function silentRefresh() {
+  api('getAll').then(function(r) {
+    if (!r || !r.ok) return;
+    CLIENTS = r.clients || [];
+    TASKS = r.tasks || [];
+    DOCS = r.documents || [];
+    PENDING_DOCS = r.pending_docs || [];
+    // Re-render current active page silently
+    var activePage = document.querySelector('.page.active');
+    if (!activePage) return;
+    var pg = activePage.id.replace('p-','');
+    if (pg === 'dash')    renderDash();
+    if (pg === 'tasks')   renderTasks();
+    if (pg === 'mine')    renderMine();
+    if (pg === 'dd')      renderDD();
+    if (pg === 'pendoc')  renderPendingDocs();
+    if (pg === 'clients') renderClients();
+    // Update sync indicator briefly
+    var st = document.getElementById('st');
+    if (st) {
+      var prev = st.textContent;
+      st.textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      setTimeout(function() { if(st) st.textContent = 'Live'; }, 3000);
+    }
+  }).catch(function() {}); // silent fail - don't show errors for background refresh
+}
+
 function doLogout() {
+  stopAutoRefresh();
   CU = null; CLIENTS = []; TASKS = []; DOCS = []; PENDING_DOCS = [];
   document.getElementById('app').style.display = 'none';
   document.getElementById('ls').style.display = 'flex';

@@ -568,12 +568,12 @@ function nav(pg, el) {
   var titles = { dash: 'Dashboard', tasks: 'Tasks', dd: 'Due Dates - FY 2026-27', gst: 'GST Compliance', clients: 'Clients', docs: 'Documents', pendoc: 'Pending Documents', mine: 'My Tasks' };
   document.getElementById('pgt').textContent = titles[pg] || pg;
   var a = document.getElementById('pga'); a.innerHTML = '';
-  if (pg === 'tasks') a.innerHTML = '<button class="btn btnd" onclick="openTaskModal()">+ Add Task</button>';
-  if (pg === 'clients') a.innerHTML = '<button class="btn btnd" onclick="openAddClient()">+ Add Client</button>';
-  if (pg === 'docs') a.innerHTML = '<button class="btn btnd" onclick="openUpload()">+ Upload</button>';
+  if (pg === 'tasks') a.innerHTML = '\u003cbutton class="btn btnd" onclick="openTaskModal()"\u003e+ Add Task\u003c/button\u003e';
+  if (pg === 'clients') a.innerHTML = '\u003cbutton class="btn btnd" onclick="openAddClient()"\u003e+ Add Client\u003c/button\u003e';
+  if (pg === 'docs') a.innerHTML = '\u003cbutton class="btn btnd" onclick="openUpload()"\u003e+ Upload\u003c/button\u003e';
   if (pg === 'dash' && CU && CU.role === 'admin') {
-    a.innerHTML = '<button class="btn" onclick="openMonthTaskModal()" style="margin-right:6px">+ Monthly Tasks</button>' +
-      '<button class="btn btnd" onclick="openYearTaskModal()">+ Yearly Tasks</button>';
+    a.innerHTML = '\u003cbutton class="btn" onclick="openMonthTaskModal()" style="margin-right:6px"\u003e+ Monthly Tasks\u003c/button\u003e' +
+      '\u003cbutton class="btn btnd" onclick="openYearTaskModal()"\u003e+ Yearly Tasks\u003c/button\u003e';
   }
   if (pg === 'dash') renderDash();
   if (pg === 'tasks') { fillCliSel('tcl'); renderTasks(); }
@@ -599,16 +599,16 @@ function fmt(d) {
   var dt = parseDate(d); if (!dt) return '-';
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-function isOD(d) { var dt = parseDate(d); return dt && dt < new Date(new Date().toDateString()); }
-function isSoon(d) { var dt = parseDate(d); if (!dt) return false; var x = (dt - new Date(new Date().toDateString()))/86400000; return x >= 0 && x <= 7; }
+function isOD(d) { var dt = parseDate(d); return dt && dt \u003c new Date(new Date().toDateString()); }
+function isSoon(d) { var dt = parseDate(d); if (!dt) return false; var x = (dt - new Date(new Date().toDateString()))/86400000; return x \u003e= 0 && x \u003c= 7; }
 function esc(s) { var s2=String(s||''); s2=s2.replace(/&/g,'&amp;'); s2=s2.replace(/\x3c/g,'&lt;'); s2=s2.replace(/\x3e/g,'&gt;'); s2=s2.replace(/"/g,'&quot;'); return s2; }
 function gc(id) { return CLIENTS.filter(function(c) { return c.id === id; })[0]; }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
 function pComps(v) { if (Array.isArray(v)) return v; if (typeof v === 'string' && v.charAt(0) === '[') { try { return JSON.parse(v); } catch(e) {} } return []; }
-function catBdg(c) { var m = {'GST':'bb','TDS':'bg','Income Tax':'ba','ROC / MCA':'bp','PF / ESIC':'bg','Audit':'br','Other':'bx'}; return '<span class="bdg '+(m[c]||'bx')+'">'+c+'</span>'; }
-function whoBdg(w) { var m = {'Atik Bhayani':'bx','Rushiraj':'bb','Sahil':'bp'}; return '<span class="bdg '+(m[w]||'bx')+'">'+w+'</span>'; }
-function stBdg(s) { var m = {pending:['ba','Pending'],inprogress:['bb','In Progress'],done:['bg','Done']}; var r = m[s]||['bx',s]; return '<span class="bdg '+r[0]+'">'+r[1]+'</span>'; }
-function pdot(p,s) { var m={high:'ph',medium:'pm',low:'pl'}; return '<div class="tdot '+(s==='done'?'pd':m[p]||'pl')+'"></div>'; }
+function catBdg(c) { var m = {'GST':'bb','TDS':'bg','Income Tax':'ba','ROC / MCA':'bp','PF / ESIC':'bg','Audit':'br','Other':'bx'}; return '\u003cspan class="bdg '+(m[c]||'bx')+'"\u003e'+c+'\u003c/span\u003e'; }
+function whoBdg(w) { var m = {'Atik Bhayani':'bx','Rushiraj':'bb','Sahil':'bp'}; return '\u003cspan class="bdg '+(m[w]||'bx')+'"\u003e'+w+'\u003c/span\u003e'; }
+function stBdg(s) { var m = {pending:['ba','Pending'],inprogress:['bb','In Progress'],done:['bg','Done']}; var r = m[s]||['bx',s]; return '\u003cspan class="bdg '+r[0]+'"\u003e'+r[1]+'\u003c/span\u003e'; }
+function pdot(p,s) { var m={high:'ph',medium:'pm',low:'pl'}; return '\u003cdiv class="tdot '+(s==='done'?'pd':m[p]||'pl')+'"\u003e\u003c/div\u003e'; }
 function dueStyle(d,s) { if (s==='done') return ''; if (isOD(d)) return 'style="color:var(--rd);font-weight:600"'; if (isSoon(d)) return 'style="color:var(--am);font-weight:500"'; return ''; }
 
 function fillCli() { fillCliSel('tcl'); fillCliSel('tclient'); fillCliSel('dcli'); fillCliSel('mcl'); fillCliSel('pdcl'); fillCliSel('pdclient'); fillDocFilter(); }
@@ -616,13 +616,13 @@ function fillCliSel(id) {
   var el = document.getElementById(id); if (!el) return;
   var cur = el.value;
   var isSelect = (id === 'tclient' || id === 'dcli' || id === 'pdclient');
-  el.innerHTML = (isSelect ? '<option value="">Select client</option>' : '<option value="">All clients</option>') +
-    CLIENTS.map(function(c) { return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('');
+  el.innerHTML = (isSelect ? '\u003coption value=""\u003eSelect client\u003c/option\u003e' : '\u003coption value=""\u003eAll clients\u003c/option\u003e') +
+    CLIENTS.map(function(c) { return '\u003coption value="'+c.id+'"\u003e'+esc(c.name)+'\u003c/option\u003e'; }).join('');
   if (cur) el.value = cur;
 }
 function fillDocFilter() {
   var el = document.getElementById('dcf'); if (!el) return;
-  el.innerHTML = '<option value="">All clients</option>' + CLIENTS.map(function(c) { return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('');
+  el.innerHTML = '\u003coption value=""\u003eAll clients\u003c/option\u003e' + CLIENTS.map(function(c) { return '\u003coption value="'+c.id+'"\u003e'+esc(c.name)+'\u003c/option\u003e'; }).join('');
 }
 
 // ---- DASHBOARD ----
@@ -631,30 +631,30 @@ function renderDash() {
   var pe = TASKS.filter(function(t) { return t.status === 'pending'; }).length;
   var dn = TASKS.filter(function(t) { return t.status === 'done'; }).length;
   document.getElementById('dstat').innerHTML =
-    '<div class="sc"><div class="sl">Active clients</div><div class="sv">'+CLIENTS.length+'</div></div>'+
-    '<div class="sc"><div class="sl">Pending tasks</div><div class="sv" style="color:var(--am)">'+pe+'</div></div>'+
-    '<div class="sc"><div class="sl">Overdue</div><div class="sv" style="color:var(--rd)">'+ov+'</div></div>'+
-    '<div class="sc"><div class="sl">Completed</div><div class="sv" style="color:var(--gr)">'+dn+'</div></div>';
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003eActive clients\u003c/div\u003e\u003cdiv class="sv"\u003e'+CLIENTS.length+'\u003c/div\u003e\u003c/div\u003e'+
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003ePending tasks\u003c/div\u003e\u003cdiv class="sv" style="color:var(--am)"\u003e'+pe+'\u003c/div\u003e\u003c/div\u003e'+
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003eOverdue\u003c/div\u003e\u003cdiv class="sv" style="color:var(--rd)"\u003e'+ov+'\u003c/div\u003e\u003c/div\u003e'+
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003eCompleted\u003c/div\u003e\u003cdiv class="sv" style="color:var(--gr)"\u003e'+dn+'\u003c/div\u003e\u003c/div\u003e';
   var top = TASKS.filter(function(t) { return t.status !== 'done'; }).sort(function(a,b) { return new Date(a.due_date)-new Date(b.due_date); }).slice(0,7);
   document.getElementById('dtask').innerHTML = top.length ? top.map(function(t) {
-    return '<div class="trow">'+pdot(t.priority,t.status)+
-      '<div style="flex:1;font-size:12px;font-weight:500">'+esc(t.name)+'</div>'+
-      '<div style="color:var(--t2);font-size:12px;min-width:90px">'+esc(t.client_name||'')+'</div>'+
+    return '\u003cdiv class="trow"\u003e'+pdot(t.priority,t.status)+
+      '\u003cdiv style="flex:1;font-size:12px;font-weight:500"\u003e'+esc(t.name)+'\u003c/div\u003e'+
+      '\u003cdiv style="color:var(--t2);font-size:12px;min-width:90px"\u003e'+esc(t.client_name||'')+'\u003c/div\u003e'+
       whoBdg(t.assignee)+
-      '<div '+dueStyle(t.due_date,t.status)+' style="font-size:11px;min-width:70px;text-align:right">'+fmt(t.due_date)+'</div>'+
-      '</div>';
-  }).join('') : '<div class="emp"><div class="empt">All tasks up to date</div></div>';
+      '\u003cdiv '+dueStyle(t.due_date,t.status)+' style="font-size:11px;min-width:70px;text-align:right"\u003e'+fmt(t.due_date)+'\u003c/div\u003e'+
+      '\u003c/div\u003e';
+  }).join('') : '\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eAll tasks up to date\u003c/div\u003e\u003c/div\u003e';
   document.getElementById('ddd').innerHTML = DD_DATA.filter(function(d) { return !isOD(d.date); }).slice(0,8).map(function(d) {
-    return '<div class="dlr"><div class="dld">'+d.lbl+'</div><div class="dlt">'+d.task+'</div>'+
-      '<div style="color:var(--t2);font-size:11px">'+d.sum+'</div>'+
-      (isSoon(d.date)?'<span class="bdg ba">Soon</span>':'<span class="bdg bg">OK</span>')+'</div>';
+    return '\u003cdiv class="dlr"\u003e\u003cdiv class="dld"\u003e'+d.lbl+'\u003c/div\u003e\u003cdiv class="dlt"\u003e'+d.task+'\u003c/div\u003e'+
+      '\u003cdiv style="color:var(--t2);font-size:11px"\u003e'+d.sum+'\u003c/div\u003e'+
+      (isSoon(d.date)?'\u003cspan class="bdg ba"\u003eSoon\u003c/span\u003e':'\u003cspan class="bdg bg"\u003eOK\u003c/span\u003e')+'\u003c/div\u003e';
   }).join('');
   renderDashPending();
   document.getElementById('dcli').innerHTML = CLIENTS.map(function(c) {
     var comps = pComps(c.compliances);
-    return '<div class="clr"><div class="clin">'+c.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()+'</div>'+
-      '<div><div style="font-weight:500;font-size:13px">'+esc(c.name)+'</div><div style="font-size:11px;color:var(--t2)">'+c.entity+'</div></div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-left:auto">'+comps.slice(0,5).map(function(x){return '<span class="bdg bx">'+x+'</span>';}).join('')+'</div></div>';
+    return '\u003cdiv class="clr"\u003e\u003cdiv class="clin"\u003e'+c.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()+'\u003c/div\u003e'+
+      '\u003cdiv\u003e\u003cdiv style="font-weight:500;font-size:13px"\u003e'+esc(c.name)+'\u003c/div\u003e\u003cdiv style="font-size:11px;color:var(--t2)"\u003e'+c.entity+'\u003c/div\u003e\u003c/div\u003e'+
+      '\u003cdiv style="display:flex;flex-wrap:wrap;gap:4px;margin-left:auto"\u003e'+comps.slice(0,5).map(function(x){return '\u003cspan class="bdg bx"\u003e'+x+'\u003c/span\u003e';}).join('')+'\u003c/div\u003e\u003c/div\u003e';
   }).join('');
 }
 
@@ -691,7 +691,7 @@ function renderTasks() {
     if (fs) t = t.filter(function(x) { return x.status === fs; });
   }
 
-  if (q)   t = t.filter(function(x) { return x.name.toLowerCase().indexOf(q)>-1 || (x.client_name||'').toLowerCase().indexOf(q)>-1; });
+  if (q)   t = t.filter(function(x) { return x.name.toLowerCase().indexOf(q)\u003e-1 || (x.client_name||'').toLowerCase().indexOf(q)\u003e-1; });
   if (fc)  t = t.filter(function(x) { return x.client_id === fc; });
   if (fw)  t = t.filter(function(x) { return x.assignee === fw; });
   if (fc2) t = t.filter(function(x) { return x.category === fc2; });
@@ -701,26 +701,26 @@ function renderTasks() {
   var isDoneTab = TASK_TAB === 'done';
   var body = document.getElementById('ttb'); if (!body) return;
   body.innerHTML = t.length ? t.map(function(tk) {
-    var actions = '<button class="btn btns" onclick="openEditTask(''+tk.id+'')">Edit</button>';
+    var actions = '\u003cbutton class="btn btns" onclick="openEditTask(''+tk.id+'')"\u003eEdit\u003c/button\u003e';
     if (isDoneTab) {
-      actions += '<button class="btn btns" style="background:var(--am-bg);color:var(--am);border-color:var(--am)" onclick="revertTask(''+tk.id+'')">Revert to Pending</button>';
+      actions += '\u003cbutton class="btn btns" style="background:var(--am-bg);color:var(--am);border-color:var(--am)" onclick="revertTask(''+tk.id+'')"\u003eRevert to Pending\u003c/button\u003e';
     } else {
-      actions += '<button class="btn btns" onclick="mkDone(''+tk.id+'')">Done</button>';
+      actions += '\u003cbutton class="btn btns" onclick="mkDone(''+tk.id+'')"\u003eDone\u003c/button\u003e';
     }
     if (isAdmin) {
-      actions += '<button class="btn btns btnr" onclick="delTask(''+tk.id+'')">Del</button>';
+      actions += '\u003cbutton class="btn btns btnr" onclick="delTask(''+tk.id+'')"\u003eDel\u003c/button\u003e';
     }
-    return '<tr'+(isDoneTab?' style="background:var(--gr-bg)"':'')+'>'+
-      '<td>'+pdot(tk.priority,tk.status)+'</td>'+
-      '<td style="font-weight:500;min-width:160px">'+esc(tk.name)+'</td>'+
-      '<td style="font-size:12px;color:var(--t2)">'+esc(tk.client_name||'')+'</td>'+
-      '<td>'+catBdg(tk.category)+'</td>'+
-      '<td>'+whoBdg(tk.assignee)+'</td>'+
-      '<td style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
-      '<td>'+stBdg(tk.status)+'</td>'+
-      '<td><input class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(''+tk.id+'',this.value)"></td>'+
-      '<td style="white-space:nowrap;display:flex;gap:4px">'+actions+'</td></tr>';
-  }).join('') : '<tr><td colspan="9"><div class="emp"><div class="empt">'+(isDoneTab?'No completed tasks yet':'No pending tasks - all done!')+'</div></div></td></tr>';
+    return '\u003ctr'+(isDoneTab?' style="background:var(--gr-bg)"':'')+'\u003e'+
+      '\u003ctd\u003e'+pdot(tk.priority,tk.status)+'\u003c/td\u003e'+
+      '\u003ctd style="font-weight:500;min-width:160px"\u003e'+esc(tk.name)+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:12px;color:var(--t2)"\u003e'+esc(tk.client_name||'')+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+catBdg(tk.category)+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+whoBdg(tk.assignee)+'\u003c/td\u003e'+
+      '\u003ctd style="white-space:nowrap;font-size:12px"\u003e'+fmt(tk.due_date)+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+stBdg(tk.status)+'\u003c/td\u003e'+
+      '\u003ctd\u003e\u003cinput class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(''+tk.id+'',this.value)"\u003e\u003c/td\u003e'+
+      '\u003ctd style="white-space:nowrap;display:flex;gap:4px"\u003e'+actions+'\u003c/td\u003e\u003c/tr\u003e';
+  }).join('') : '\u003ctr\u003e\u003ctd colspan="9"\u003e\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003e'+(isDoneTab?'No completed tasks yet':'No pending tasks - all done!')+'\u003c/div\u003e\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e';
 }
 
 
@@ -811,7 +811,7 @@ function saveTask() {
   var btn = document.getElementById('tsb');
   btn.disabled = true; btn.textContent = 'Saving...'; setSyn(true);
   api('saveTask', payload).then(function() {
-    if (eid) { var idx=-1; for(var i=0;i<TASKS.length;i++){if(TASKS[i].id===eid){idx=i;break;}} if(idx>-1)TASKS[idx]=payload; }
+    if (eid) { var idx=-1; for(var i=0;i\u003cTASKS.length;i++){if(TASKS[i].id===eid){idx=i;break;}} if(idx\u003e-1)TASKS[idx]=payload; }
     else { TASKS.push(payload); }
     setSyn(false); closeMo('mo-task');
     if (CU.role==='admin') { renderTasks(); renderDash(); } else { renderMine(); }
@@ -831,10 +831,10 @@ function openMonthTaskModal() {
 function initMonthYearSelects(mid, yid) {
   var ms = document.getElementById(mid);
   var ys = document.getElementById(yid);
-  if (!ms || ms.options.length > 0) return;
+  if (!ms || ms.options.length \u003e 0) return;
   var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   months.forEach(function(m,i) { var o=document.createElement('option'); o.value=i+1; o.text=m; ms.appendChild(o); });
-  for (var y=2026;y<=2028;y++) { var o=document.createElement('option'); o.value=y; o.text=y; ys.appendChild(o); }
+  for (var y=2026;y\u003c=2028;y++) { var o=document.createElement('option'); o.value=y; o.text=y; ys.appendChild(o); }
 }
 function buildMonthTable() {
   var month = parseInt(document.getElementById('mt-month').value);
@@ -851,16 +851,16 @@ function buildMonthTable() {
     if (gstType==='regular' && gstFreq==='monthly') gstTasks = ['GSTR-1','GSTR-3B'];
     else if (gstType==='regular' && gstFreq==='quarterly') gstTasks = isQE ? ['GSTR-1 Qtr','GSTR-3B Qtr'] : ['PMT-06'];
     else if (gstType==='composition' && isQE) gstTasks = ['CMP-08'];
-    return '<tr>'+
-      '<td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+gstTasks.join(', ')+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(hasEmp?'Payment':'-')+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(hasEmp?'Challan':'-')+'</td>'+
-      '<td><select class="btn mt-assign" style="font-size:12px" data-cid="'+c.id+'">'+
-      '<option value="Atik Bhayani">Atik Bhayani</option>'+
-      '<option value="Rushiraj" selected>Rushiraj</option>'+
-      '<option value="Sahil">Sahil</option>'+
-      '</select></td></tr>';
+    return '\u003ctr\u003e'+
+      '\u003ctd style="font-weight:500"\u003e'+esc(c.short_name||c.name)+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+gstTasks.join(', ')+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(hasEmp?'Payment':'-')+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(hasEmp?'Challan':'-')+'\u003c/td\u003e'+
+      '\u003ctd\u003e\u003cselect class="btn mt-assign" style="font-size:12px" data-cid="'+c.id+'"\u003e'+
+      '\u003coption value="Atik Bhayani"\u003eAtik Bhayani\u003c/option\u003e'+
+      '\u003coption value="Rushiraj" selected\u003eRushiraj\u003c/option\u003e'+
+      '\u003coption value="Sahil"\u003eSahil\u003c/option\u003e'+
+      '\u003c/select\u003e\u003c/td\u003e\u003c/tr\u003e';
   }).join('');
 }
 function setAllAssign(name) {
@@ -887,7 +887,7 @@ function createMonthlyTasks() {
 function openYearTaskModal() {
   var now = new Date();
   var ys = document.getElementById('yt-year');
-  if (!ys.options.length) { for(var y=2026;y<=2030;y++){var o=document.createElement('option');o.value=y;o.text='FY '+y;ys.appendChild(o);} }
+  if (!ys.options.length) { for(var y=2026;y\u003c=2030;y++){var o=document.createElement('option');o.value=y;o.text='FY '+y;ys.appendChild(o);} }
   ys.value = now.getFullYear();
   buildYearTable();
   document.getElementById('mo-yeartask').classList.add('open');
@@ -899,18 +899,18 @@ function buildYearTable() {
     var isPvtLLP = c.entity==='Private Limited'||c.entity==='LLP';
     var isProp   = c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF';
     var hasEmp   = c.has_employees==='yes';
-    return '<tr>'+
-      '<td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(hasAudit?'31 Oct':'31 Aug')+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(hasAudit?'30 Sep':'-')+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(isPvtLLP?'AOC-4, MGT-7':'-')+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(isProp?'4 dates':'-')+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(hasEmp?'4 quarters':'-')+'</td>'+
-      '<td><select class="btn yt-assign" style="font-size:12px" data-cid="'+c.id+'">'+
-      '<option value="Atik Bhayani" selected>Atik Bhayani</option>'+
-      '<option value="Rushiraj">Rushiraj</option>'+
-      '<option value="Sahil">Sahil</option>'+
-      '</select></td></tr>';
+    return '\u003ctr\u003e'+
+      '\u003ctd style="font-weight:500"\u003e'+esc(c.short_name||c.name)+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(hasAudit?'31 Oct':'31 Aug')+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(hasAudit?'30 Sep':'-')+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(isPvtLLP?'AOC-4, MGT-7':'-')+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(isProp?'4 dates':'-')+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:11px;color:var(--t2)"\u003e'+(hasEmp?'4 quarters':'-')+'\u003c/td\u003e'+
+      '\u003ctd\u003e\u003cselect class="btn yt-assign" style="font-size:12px" data-cid="'+c.id+'"\u003e'+
+      '\u003coption value="Atik Bhayani" selected\u003eAtik Bhayani\u003c/option\u003e'+
+      '\u003coption value="Rushiraj"\u003eRushiraj\u003c/option\u003e'+
+      '\u003coption value="Sahil"\u003eSahil\u003c/option\u003e'+
+      '\u003c/select\u003e\u003c/td\u003e\u003c/tr\u003e';
   }).join('');
 }
 function setAllYearAssign(name) {
@@ -962,29 +962,29 @@ function renderMine() {
   var sw = TASKS.filter(function(t){return t.assignee===CU.name&&t.status!=='done'&&isSoon(t.due_date);}).length;
   var dn = TASKS.filter(function(t){return t.assignee===CU.name&&t.status==='done';}).length;
   document.getElementById('mstat').innerHTML =
-    '<div class="sc"><div class="sl">Overdue</div><div class="sv" style="color:var(--rd)">'+ov+'</div></div>'+
-    '<div class="sc"><div class="sl">Due this week</div><div class="sv" style="color:var(--am)">'+sw+'</div></div>'+
-    '<div class="sc"><div class="sl">Completed</div><div class="sv" style="color:var(--gr)">'+dn+'</div></div>';
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003eOverdue\u003c/div\u003e\u003cdiv class="sv" style="color:var(--rd)"\u003e'+ov+'\u003c/div\u003e\u003c/div\u003e'+
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003eDue this week\u003c/div\u003e\u003cdiv class="sv" style="color:var(--am)"\u003e'+sw+'\u003c/div\u003e\u003c/div\u003e'+
+    '\u003cdiv class="sc"\u003e\u003cdiv class="sl"\u003eCompleted\u003c/div\u003e\u003cdiv class="sv" style="color:var(--gr)"\u003e'+dn+'\u003c/div\u003e\u003c/div\u003e';
 
   var isDoneTab = MINE_TAB === 'done';
   var body = document.getElementById('mtb'); if(!body) return;
   body.innerHTML = my.length ? my.map(function(tk) {
-    var actions = '<button class="btn btns" onclick="openEditTask(''+tk.id+'')">Edit</button>';
+    var actions = '\u003cbutton class="btn btns" onclick="openEditTask(''+tk.id+'')"\u003eEdit\u003c/button\u003e';
     if (isDoneTab) {
-      actions += '<button class="btn btns" style="background:var(--am-bg);color:var(--am);border-color:var(--am)" onclick="revertTask(''+tk.id+'')">Revert</button>';
+      actions += '\u003cbutton class="btn btns" style="background:var(--am-bg);color:var(--am);border-color:var(--am)" onclick="revertTask(''+tk.id+'')"\u003eRevert\u003c/button\u003e';
     } else {
-      actions += '<button class="btn btns" onclick="stfDone(''+tk.id+'')">Done</button>';
+      actions += '\u003cbutton class="btn btns" onclick="stfDone(''+tk.id+'')"\u003eDone\u003c/button\u003e';
     }
-    return '<tr'+(isDoneTab?' style="background:var(--gr-bg)"':'')+'>'+
-      '<td>'+pdot(tk.priority,tk.status)+'</td>'+
-      '<td style="font-weight:500;min-width:150px">'+esc(tk.name)+'</td>'+
-      '<td style="font-size:12px;color:var(--t2)">'+esc(tk.client_name||'')+'</td>'+
-      '<td>'+catBdg(tk.category)+'</td>'+
-      '<td '+dueStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
-      '<td>'+stBdg(tk.status)+'</td>'+
-      '<td><input class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(''+tk.id+'',this.value)"></td>'+
-      '<td style="white-space:nowrap;display:flex;gap:4px">'+actions+'</td></tr>';
-  }).join('') : '<tr><td colspan="8"><div class="emp"><div class="empt">'+(isDoneTab?'No completed tasks yet':'No pending tasks - all done!')+'</div></div></td></tr>';
+    return '\u003ctr'+(isDoneTab?' style="background:var(--gr-bg)"':'')+'\u003e'+
+      '\u003ctd\u003e'+pdot(tk.priority,tk.status)+'\u003c/td\u003e'+
+      '\u003ctd style="font-weight:500;min-width:150px"\u003e'+esc(tk.name)+'\u003c/td\u003e'+
+      '\u003ctd style="font-size:12px;color:var(--t2)"\u003e'+esc(tk.client_name||'')+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+catBdg(tk.category)+'\u003c/td\u003e'+
+      '\u003ctd '+dueStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px"\u003e'+fmt(tk.due_date)+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+stBdg(tk.status)+'\u003c/td\u003e'+
+      '\u003ctd\u003e\u003cinput class="ri" value="'+esc(tk.remarks||'')+'" placeholder="Add remark..." onchange="qRemark(''+tk.id+'',this.value)"\u003e\u003c/td\u003e'+
+      '\u003ctd style="white-space:nowrap;display:flex;gap:4px"\u003e'+actions+'\u003c/td\u003e\u003c/tr\u003e';
+  }).join('') : '\u003ctr\u003e\u003ctd colspan="8"\u003e\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003e'+(isDoneTab?'No completed tasks yet':'No pending tasks - all done!')+'\u003c/div\u003e\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e';
 }
 
 
@@ -998,7 +998,7 @@ function stfDone(id) {
 // ---- CLIENTS ----
 function renderClients(q) {
   if (!q) q='';
-  var list = q ? CLIENTS.filter(function(c){return c.name.toLowerCase().indexOf(q.toLowerCase())>-1||(c.pan||'').toLowerCase().indexOf(q.toLowerCase())>-1;}) : CLIENTS.slice();
+  var list = q ? CLIENTS.filter(function(c){return c.name.toLowerCase().indexOf(q.toLowerCase())\u003e-1||(c.pan||'').toLowerCase().indexOf(q.toLowerCase())\u003e-1;}) : CLIENTS.slice();
   buildCliTable(list);
 }
 function filterCliType(tp) { buildCliTable(tp ? CLIENTS.filter(function(c){return c.entity===tp;}) : CLIENTS); }
@@ -1007,18 +1007,18 @@ function buildCliTable(list) {
   var oc = function(id) { return TASKS.filter(function(t){return t.client_id===id&&t.status!=='done';}).length; };
   body.innerHTML = list.length ? list.map(function(c) {
     var comps = pComps(c.compliances);
-    var freq = c.gst_type==='none'?'<span class="bdg bx">No GST</span>':c.gst_freq==='quarterly'?'<span class="bdg bp">Quarterly QRMP</span>':'<span class="bdg bb">Monthly</span>';
-    return '<tr>'+
-      '<td style="font-weight:500">'+esc(c.name)+'</td>'+
-      '<td><span class="bdg bx">'+c.entity+'</span></td>'+
-      '<td style="font-family:monospace;font-size:12px">'+(c.pan||'-')+'</td>'+
-      '<td style="font-family:monospace;font-size:12px">'+(c.gstin||'-')+'</td>'+
-      '<td>'+freq+'</td>'+
-      '<td>'+comps.slice(0,4).map(function(x){return '<span class="bdg bb" style="margin:1px">'+x+'</span>';}).join('')+(comps.length>4?'<span class="bdg bx">+'+( comps.length-4)+'</span>':'')+'</td>'+
-      '<td>'+(oc(c.id)>0?'<span class="bdg ba">'+oc(c.id)+' open</span>':'<span class="bdg bg">Clear</span>')+'</td>'+
-      '<td style="white-space:nowrap;display:flex;gap:4px"><button class="btn btns" onclick="openEditClient(\''+c.id+'\')">Edit</button><button class="btn btns btnr" onclick="delCli(\''+c.id+'\')">Remove</button></td>'+
-      '</tr>';
-  }).join('') : '<tr><td colspan="8"><div class="emp"><div class="empt">No clients found</div></div></td></tr>';
+    var freq = c.gst_type==='none'?'\u003cspan class="bdg bx"\u003eNo GST\u003c/span\u003e':c.gst_freq==='quarterly'?'\u003cspan class="bdg bp"\u003eQuarterly QRMP\u003c/span\u003e':'\u003cspan class="bdg bb"\u003eMonthly\u003c/span\u003e';
+    return '\u003ctr\u003e'+
+      '\u003ctd style="font-weight:500"\u003e'+esc(c.name)+'\u003c/td\u003e'+
+      '\u003ctd\u003e\u003cspan class="bdg bx"\u003e'+c.entity+'\u003c/span\u003e\u003c/td\u003e'+
+      '\u003ctd style="font-family:monospace;font-size:12px"\u003e'+(c.pan||'-')+'\u003c/td\u003e'+
+      '\u003ctd style="font-family:monospace;font-size:12px"\u003e'+(c.gstin||'-')+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+freq+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+comps.slice(0,4).map(function(x){return '\u003cspan class="bdg bb" style="margin:1px"\u003e'+x+'\u003c/span\u003e';}).join('')+(comps.length\u003e4?'\u003cspan class="bdg bx"\u003e+'+( comps.length-4)+'\u003c/span\u003e':'')+'\u003c/td\u003e'+
+      '\u003ctd\u003e'+(oc(c.id)\u003e0?'\u003cspan class="bdg ba"\u003e'+oc(c.id)+' open\u003c/span\u003e':'\u003cspan class="bdg bg"\u003eClear\u003c/span\u003e')+'\u003c/td\u003e'+
+      '\u003ctd style="white-space:nowrap;display:flex;gap:4px"\u003e\u003cbutton class="btn btns" onclick="openEditClient(\''+c.id+'\')"\u003eEdit\u003c/button\u003e\u003cbutton class="btn btns btnr" onclick="delCli(\''+c.id+'\')"\u003eRemove\u003c/button\u003e\u003c/td\u003e'+
+      '\u003c/tr\u003e';
+  }).join('') : '\u003ctr\u003e\u003ctd colspan="8"\u003e\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eNo clients found\u003c/div\u003e\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e';
 }
 function delCli(id) {
   if (!confirm('Remove this client?')) return;
@@ -1068,7 +1068,7 @@ function openEditClient(id){
   document.getElementById('cmh').textContent='Edit client';
   document.getElementById('csb').textContent='Update client';
   var existingComps = pComps(c.compliances);
-  updComps(existingComps.length>0?existingComps:null);
+  updComps(existingComps.length\u003e0?existingComps:null);
   document.getElementById('mo-cli').classList.add('open');
 }
 function updComps(existing){
@@ -1083,8 +1083,8 @@ function updComps(existing){
   document.getElementById('cpl').innerHTML=on.map(function(r){
     var freq=r.name==='GSTR-1'&&cfg.gstfreq==='quarterly'?'Quarterly (13th after quarter)':r.name==='GSTR-3B'&&cfg.gstfreq==='quarterly'?'Quarterly + PMT-06 monthly':r.freq;
     var cid='chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_');
-    return '<div class="cpi"><input type="checkbox" id="'+cid+'" '+(checked.indexOf(r.name)>-1?'checked':'')+' style="width:16px;height:16px;cursor:pointer;flex-shrink:0"><div class="cpn" style="cursor:pointer" onclick="document.getElementById(\''+cid+'\').click()">'+r.name+'</div><div class="cpf">'+freq+'</div></div>';
-  }).join('')+off.map(function(r){return '<div class="cpi" style="opacity:.35"><div style="width:16px;height:16px;border-radius:4px;background:var(--s2);flex-shrink:0"></div><div class="cpn">'+r.name+'</div><div class="cpf">Not applicable</div></div>';}).join('');
+    return '\u003cdiv class="cpi"\u003e\u003cinput type="checkbox" id="'+cid+'" '+(checked.indexOf(r.name)\u003e-1?'checked':'')+' style="width:16px;height:16px;cursor:pointer;flex-shrink:0"\u003e\u003cdiv class="cpn" style="cursor:pointer" onclick="document.getElementById(\''+cid+'\').click()"\u003e'+r.name+'\u003c/div\u003e\u003cdiv class="cpf"\u003e'+freq+'\u003c/div\u003e\u003c/div\u003e';
+  }).join('')+off.map(function(r){return '\u003cdiv class="cpi" style="opacity:.35"\u003e\u003cdiv style="width:16px;height:16px;border-radius:4px;background:var(--s2);flex-shrink:0"\u003e\u003c/div\u003e\u003cdiv class="cpn"\u003e'+r.name+'\u003c/div\u003e\u003cdiv class="cpf"\u003eNot applicable\u003c/div\u003e\u003c/div\u003e';}).join('');
 }
 function getCheckedComps(){return COMP_RULES.filter(function(r){var el=document.getElementById('chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_'));return el&&el.checked;}).map(function(r){return r.name;});}
 function saveClient(){
@@ -1094,13 +1094,13 @@ function saveClient(){
   if(!name||!pan||!entity){alert('Please fill client name, PAN and entity type.');return;}
   var comps=getCheckedComps();
   var words=name.split(' ');
-  var short=words.filter(function(w){return w.length>2;}).map(function(w){return w[0];}).join('').toUpperCase()||name.slice(0,6);
+  var short=words.filter(function(w){return w.length\u003e2;}).map(function(w){return w[0];}).join('').toUpperCase()||name.slice(0,6);
   var eid=document.getElementById('cid').value;
   var payload={id:eid||uid(),name:name,short_name:short,entity:entity,pan:pan,gst_type:document.getElementById('cgst').value,gst_freq:document.getElementById('cgstf').value,gstin:document.getElementById('cgstin').value.trim().toUpperCase(),has_employees:document.getElementById('cemp').value,turnover:document.getElementById('ctov').value,email:document.getElementById('ceml').value.trim(),phone:document.getElementById('cph').value.trim(),notes:document.getElementById('cnts').value.trim(),compliances:comps};
   var btn=document.getElementById('csb');
   btn.disabled=true;btn.textContent='Saving...';setSyn(true);
   api('saveClient',payload).then(function(){
-    if(eid){var idx=-1;for(var i=0;i<CLIENTS.length;i++){if(CLIENTS[i].id===eid){idx=i;break;}}if(idx>-1)CLIENTS[idx]=payload;}else{CLIENTS.push(payload);}
+    if(eid){var idx=-1;for(var i=0;i\u003cCLIENTS.length;i++){if(CLIENTS[i].id===eid){idx=i;break;}}if(idx\u003e-1)CLIENTS[idx]=payload;}else{CLIENTS.push(payload);}
     setSyn(false);closeMo('mo-cli');renderClients();renderDash();fillCli();
     alert((eid?'Updated':'Added')+': '+name);
   }).catch(function(e){alert('Error: '+e.message);})
@@ -1110,22 +1110,22 @@ function saveClient(){
 // ---- GST COMPLIANCE ----
 function initGSTFilters(){
   var gm=document.getElementById('gm'),gy=document.getElementById('gy');
-  if(!gm||gm.options.length>0)return;
+  if(!gm||gm.options.length\u003e0)return;
   var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   months.forEach(function(m,i){var o=document.createElement('option');o.value=i+1;o.text=m;gm.appendChild(o);});
   var now=new Date(); gm.value=now.getMonth()+1;
-  for(var y=2026;y<=2028;y++){var o=document.createElement('option');o.value=y;o.text=y;gy.appendChild(o);}
+  for(var y=2026;y\u003c=2028;y++){var o=document.createElement('option');o.value=y;o.text=y;gy.appendChild(o);}
   gy.value=now.getFullYear();
 }
 function loadGST(){
   var month=parseInt(document.getElementById('gm').value);
   var year=parseInt(document.getElementById('gy').value);
   var card=document.getElementById('gcard');
-  card.innerHTML='<div class="emp"><div class="empt">Loading...</div></div>';
+  card.innerHTML='\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eLoading...\u003c/div\u003e\u003c/div\u003e';
   setSyn(true);
   api('getGSTCompliance',{month:month,year:year}).then(function(res){
     setSyn(false);
-    if(!res.ok){card.innerHTML='<div class="emp"><div class="empt">Error: '+res.error+'</div></div>';return;}
+    if(!res.ok){card.innerHTML='\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eError: '+res.error+'\u003c/div\u003e\u003c/div\u003e';return;}
     // Update local cache from server response (server is source of truth)
     res.rows.forEach(function(r){
       var r1k=r.id+'_'+year+'_'+month+'_r1';
@@ -1135,43 +1135,43 @@ function loadGST(){
       GST_TICKS[r3k] = r.r3b_filed || false;
     });
     renderGSTTable(res);
-  }).catch(function(e){setSyn(false);card.innerHTML='<div class="emp"><div class="empt">Error: '+e.message+'</div></div>';});
+  }).catch(function(e){setSyn(false);card.innerHTML='\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eError: '+e.message+'\u003c/div\u003e\u003c/div\u003e';});
 }
 function renderGSTTable(res){
   var card=document.getElementById('gcard');
-  if(!res.rows||!res.rows.length){card.innerHTML='<div class="emp"><div class="empt">No GST clients found.</div></div>';return;}
+  if(!res.rows||!res.rows.length){card.innerHTML='\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eNo GST clients found.\u003c/div\u003e\u003c/div\u003e';return;}
   window.GST_RES=res;
   var monthly=res.rows.filter(function(r){return r.gst_freq!=='quarterly'&&r.gst_freq!=='composition';}).length;
   var qrmp=res.rows.filter(function(r){return r.gst_freq==='quarterly';}).length;
   var comp=res.rows.filter(function(r){return r.gst_freq==='composition';}).length;
-  var html='<div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
-  html+='<div style="font-size:13px;font-weight:600">GST Compliance - '+res.month+'</div>';
-  html+='<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="bdg bb">Monthly: '+monthly+'</span><span class="bdg bp">QRMP: '+qrmp+'</span>';
-  if(comp)html+='<span class="bdg ba">Composition: '+comp+'</span>';
-  html+='</div></div>';
-  html+='<div class="tw"><table><thead><tr><th>#</th><th>Client</th><th>GSTIN</th><th>Type</th><th>GSTR-1 / IFF Due</th><th style="text-align:center">R1 Filed</th><th>GSTR-3B / PMT Due</th><th style="text-align:center">3B Filed</th></tr></thead><tbody>';
-  for(var i=0;i<res.rows.length;i++){
+  var html='\u003cdiv style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"\u003e';
+  html+='\u003cdiv style="font-size:13px;font-weight:600"\u003eGST Compliance - '+res.month+'\u003c/div\u003e';
+  html+='\u003cdiv style="display:flex;gap:8px;flex-wrap:wrap"\u003e\u003cspan class="bdg bb"\u003eMonthly: '+monthly+'\u003c/span\u003e\u003cspan class="bdg bp"\u003eQRMP: '+qrmp+'\u003c/span\u003e';
+  if(comp)html+='\u003cspan class="bdg ba"\u003eComposition: '+comp+'\u003c/span\u003e';
+  html+='\u003c/div\u003e\u003c/div\u003e';
+  html+='\u003cdiv class="tw"\u003e\u003ctable\u003e\u003cthead\u003e\u003ctr\u003e\u003cth\u003e#\u003c/th\u003e\u003cth\u003eClient\u003c/th\u003e\u003cth\u003eGSTIN\u003c/th\u003e\u003cth\u003eType\u003c/th\u003e\u003cth\u003eGSTR-1 / IFF Due\u003c/th\u003e\u003cth style="text-align:center"\u003eR1 Filed\u003c/th\u003e\u003cth\u003eGSTR-3B / PMT Due\u003c/th\u003e\u003cth style="text-align:center"\u003e3B Filed\u003c/th\u003e\u003c/tr\u003e\u003c/thead\u003e\u003ctbody\u003e';
+  for(var i=0;i\u003cres.rows.length;i++){
     var r=res.rows[i];
     var isQ=r.gst_freq==='quarterly',isCmp=r.gst_freq==='composition';
-    var typeBdg=isCmp?'<span class="bdg ba">CMP</span>':isQ?'<span class="bdg bp">QRMP</span>':'<span class="bdg bb">Monthly</span>';
+    var typeBdg=isCmp?'\u003cspan class="bdg ba"\u003eCMP\u003c/span\u003e':isQ?'\u003cspan class="bdg bp"\u003eQRMP\u003c/span\u003e':'\u003cspan class="bdg bb"\u003eMonthly\u003c/span\u003e';
     var r1Due=r.r1Due&&r.r1Due!==''?fmt(r.r1Due)+' ('+r.r1Label+')':'-';
     var r3bDue=r.r3bDue&&r.r3bDue!==''?fmt(r.r3bDue)+' ('+r.r3bLabel+')':'-';
     var r1k=r.id+'_'+res.year+'_'+res.month+'_r1';
     var r3k=r.id+'_'+res.year+'_'+res.month+'_r3b';
     var bothDone=(r.r1_filed&&r.r3bDue==='')||(r.r1_filed&&r.r3b_filed);
     var rowStyle=bothDone?'style="opacity:0.5"':'';
-    html+='<tr '+rowStyle+'>';
-    html+='<td>'+(i+1)+'</td>';
-    html+='<td style="font-weight:500">'+esc(r.name)+'</td>';
-    html+='<td style="font-family:monospace;font-size:11px">'+esc(r.gstin||'-')+'</td>';
-    html+='<td>'+typeBdg+'</td>';
-    html+='<td style="font-size:12px">'+r1Due+'</td>';
-    html+='<td style="text-align:center"><input type="checkbox" '+(r.r1_filed?'checked':'')+' onchange="tickGSTRow(\''+r.id+'\',\'r1\',this.checked,'+res.year+','+res.month+')" style="width:18px;height:18px;cursor:pointer"></td>';
-    html+='<td style="font-size:12px">'+r3bDue+'</td>';
-    html+='<td style="text-align:center"><input type="checkbox" '+(r.r3b_filed?'checked':'')+' onchange="tickGSTRow(\''+r.id+'\',\'r3b\',this.checked,'+res.year+','+res.month+')" style="width:18px;height:18px;cursor:pointer"></td>';
-    html+='</tr>';
+    html+='\u003ctr '+rowStyle+'\u003e';
+    html+='\u003ctd\u003e'+(i+1)+'\u003c/td\u003e';
+    html+='\u003ctd style="font-weight:500"\u003e'+esc(r.name)+'\u003c/td\u003e';
+    html+='\u003ctd style="font-family:monospace;font-size:11px"\u003e'+esc(r.gstin||'-')+'\u003c/td\u003e';
+    html+='\u003ctd\u003e'+typeBdg+'\u003c/td\u003e';
+    html+='\u003ctd style="font-size:12px"\u003e'+r1Due+'\u003c/td\u003e';
+    html+='\u003ctd style="text-align:center"\u003e\u003cinput type="checkbox" '+(r.r1_filed?'checked':'')+' onchange="tickGSTRow(\''+r.id+'\',\'r1\',this.checked,'+res.year+','+res.month+')" style="width:18px;height:18px;cursor:pointer"\u003e\u003c/td\u003e';
+    html+='\u003ctd style="font-size:12px"\u003e'+r3bDue+'\u003c/td\u003e';
+    html+='\u003ctd style="text-align:center"\u003e\u003cinput type="checkbox" '+(r.r3b_filed?'checked':'')+' onchange="tickGSTRow(\''+r.id+'\',\'r3b\',this.checked,'+res.year+','+res.month+')" style="width:18px;height:18px;cursor:pointer"\u003e\u003c/td\u003e';
+    html+='\u003c/tr\u003e';
   }
-  html+='</tbody></table></div>';
+  html+='\u003c/tbody\u003e\u003c/table\u003e\u003c/div\u003e';
   card.innerHTML=html;
 }
 function tickGSTRow(clientId,field,value,year,month){
@@ -1199,8 +1199,8 @@ function renderDocs(){
   if(cf)docs=docs.filter(function(d){return d.client_id===cf;});
   if(catf)docs=docs.filter(function(d){return d.category===catf;});
   var list=document.getElementById('dl');if(!list)return;
-  if(!docs.length){list.innerHTML='<div class="emp"><div class="empi">F</div><div class="empt">No documents recorded yet</div></div>';return;}
-  list.innerHTML=docs.map(function(d){return '<div class="dr"><div class="di">F</div><div><div style="font-weight:500">'+esc(d.description)+'</div><div style="font-size:11px;color:var(--t3)">'+esc(d.client_name||'')+' - '+d.category+' - '+d.financial_year+' - '+esc(d.filename||'')+'</div></div><span class="bdg bb">'+d.category+'</span><button class="btn btns btnr" onclick="delDoc(\''+d.id+'\')">Remove</button></div>';}).join('');
+  if(!docs.length){list.innerHTML='\u003cdiv class="emp"\u003e\u003cdiv class="empi"\u003eF\u003c/div\u003e\u003cdiv class="empt"\u003eNo documents recorded yet\u003c/div\u003e\u003c/div\u003e';return;}
+  list.innerHTML=docs.map(function(d){return '\u003cdiv class="dr"\u003e\u003cdiv class="di"\u003eF\u003c/div\u003e\u003cdiv\u003e\u003cdiv style="font-weight:500"\u003e'+esc(d.description)+'\u003c/div\u003e\u003cdiv style="font-size:11px;color:var(--t3)"\u003e'+esc(d.client_name||'')+' - '+d.category+' - '+d.financial_year+' - '+esc(d.filename||'')+'\u003c/div\u003e\u003c/div\u003e\u003cspan class="bdg bb"\u003e'+d.category+'\u003c/span\u003e\u003cbutton class="btn btns btnr" onclick="delDoc(\''+d.id+'\')"\u003eRemove\u003c/button\u003e\u003c/div\u003e';}).join('');
 }
 function openUpload(){
   fillCliSel('dcli');
@@ -1229,35 +1229,35 @@ function renderPendingDocs(){
   if(fc)list=list.filter(function(d){return d.client_id===fc;});
   list.sort(function(a,b){return new Date(a.needed_by||'2099-12-31')-new Date(b.needed_by||'2099-12-31');});
   var el=document.getElementById('pdlist');if(!el)return;
-  if(!list.length){el.innerHTML='<div class="emp"><div class="empt">No pending documents. Add items you are waiting to receive from clients.</div></div>';return;}
+  if(!list.length){el.innerHTML='\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eNo pending documents. Add items you are waiting to receive from clients.\u003c/div\u003e\u003c/div\u003e';return;}
   var html='';
-  for(var i=0;i<list.length;i++){
+  for(var i=0;i\u003clist.length;i++){
     var d=list[i];
     var od=isOD(d.needed_by),sn=isSoon(d.needed_by);
     var cls=od?'br':sn?'ba':'bx';
     var dateStr=d.needed_by?fmt(d.needed_by):'No date';
-    var actionBtn=d.received?'<span class="bdg bg">Received</span>':'<button class="btn btns" style="background:var(--gr-bg);color:var(--gr)" onclick="markReceived(\''+d.id+'\')">Mark received</button>';
-    html+='<div class="dr"><div class="di" style="background:var(--am-bg);color:var(--am)">!</div>'+
-      '<div style="flex:1"><div style="font-weight:500">'+esc(d.name)+'</div>'+
-      '<div style="font-size:11px;color:var(--t2)">'+esc(d.client_name||'')+' - '+(d.category||'')+(d.remarks?' - '+esc(d.remarks):'')+'</div></div>'+
-      '<span class="bdg '+cls+'">'+dateStr+'</span>'+actionBtn+
-      '<button class="btn btns btnr" onclick="delPendingDoc(\''+d.id+'\')">Del</button></div>';
+    var actionBtn=d.received?'\u003cspan class="bdg bg"\u003eReceived\u003c/span\u003e':'\u003cbutton class="btn btns" style="background:var(--gr-bg);color:var(--gr)" onclick="markReceived(\''+d.id+'\')"\u003eMark received\u003c/button\u003e';
+    html+='\u003cdiv class="dr"\u003e\u003cdiv class="di" style="background:var(--am-bg);color:var(--am)"\u003e!\u003c/div\u003e'+
+      '\u003cdiv style="flex:1"\u003e\u003cdiv style="font-weight:500"\u003e'+esc(d.name)+'\u003c/div\u003e'+
+      '\u003cdiv style="font-size:11px;color:var(--t2)"\u003e'+esc(d.client_name||'')+' - '+(d.category||'')+(d.remarks?' - '+esc(d.remarks):'')+'\u003c/div\u003e\u003c/div\u003e'+
+      '\u003cspan class="bdg '+cls+'"\u003e'+dateStr+'\u003c/span\u003e'+actionBtn+
+      '\u003cbutton class="btn btns btnr" onclick="delPendingDoc(\''+d.id+'\')"\u003eDel\u003c/button\u003e\u003c/div\u003e';
   }
   el.innerHTML=html;
 }
 function renderDashPending(){
   var el=document.getElementById('dpd');if(!el)return;
   var pending=PENDING_DOCS.filter(function(d){return !d.received;});
-  if(!pending.length){el.innerHTML='<div style="font-size:12px;color:var(--t2);padding:8px 0">No pending items - all documents received</div>';return;}
+  if(!pending.length){el.innerHTML='\u003cdiv style="font-size:12px;color:var(--t2);padding:8px 0"\u003eNo pending items - all documents received\u003c/div\u003e';return;}
   el.innerHTML=pending.slice(0,6).map(function(d){
     var od=isOD(d.needed_by),sn=isSoon(d.needed_by);
-    return '<div class="trow">'+
-      '<div class="tdot '+(od?'ph':sn?'pm':'pl')+'"></div>'+
-      '<div style="flex:1;font-size:12px;font-weight:500">'+esc(d.name)+'</div>'+
-      '<div style="color:var(--t2);font-size:12px;min-width:100px">'+esc(d.client_name||'')+'</div>'+
-      '<div style="font-size:11px;'+(od?'color:var(--rd);font-weight:600':sn?'color:var(--am)':'color:var(--t3)')+'">'+( d.needed_by?fmt(d.needed_by):'-')+'</div>'+
-      '</div>';
-  }).join('')+(pending.length>6?'<div style="font-size:11px;color:var(--t2);padding-top:8px">+ '+(pending.length-6)+' more items</div>':'');
+    return '\u003cdiv class="trow"\u003e'+
+      '\u003cdiv class="tdot '+(od?'ph':sn?'pm':'pl')+'"\u003e\u003c/div\u003e'+
+      '\u003cdiv style="flex:1;font-size:12px;font-weight:500"\u003e'+esc(d.name)+'\u003c/div\u003e'+
+      '\u003cdiv style="color:var(--t2);font-size:12px;min-width:100px"\u003e'+esc(d.client_name||'')+'\u003c/div\u003e'+
+      '\u003cdiv style="font-size:11px;'+(od?'color:var(--rd);font-weight:600':sn?'color:var(--am)':'color:var(--t3)')+'"\u003e'+( d.needed_by?fmt(d.needed_by):'-')+'\u003c/div\u003e'+
+      '\u003c/div\u003e';
+  }).join('')+(pending.length\u003e6?'\u003cdiv style="font-size:11px;color:var(--t2);padding-top:8px"\u003e+ '+(pending.length-6)+' more items\u003c/div\u003e':'');
 }
 function openAddPendingDoc(){
   document.getElementById('pdid').value='';
@@ -1276,7 +1276,7 @@ function savePendingDoc(){
   var btn=document.getElementById('pdsb');
   btn.disabled=true;btn.textContent='Saving...';setSyn(true);
   api('savePendingDoc',payload).then(function(){
-    if(eid){var idx=-1;for(var i=0;i<PENDING_DOCS.length;i++){if(PENDING_DOCS[i].id===eid){idx=i;break;}}if(idx>-1)PENDING_DOCS[idx]=payload;}else{PENDING_DOCS.push(payload);}
+    if(eid){var idx=-1;for(var i=0;i\u003cPENDING_DOCS.length;i++){if(PENDING_DOCS[i].id===eid){idx=i;break;}}if(idx\u003e-1)PENDING_DOCS[idx]=payload;}else{PENDING_DOCS.push(payload);}
     setSyn(false);closeMo('mo-pd');renderPendingDocs();renderDashPending();
   }).catch(function(e){alert('Error: '+e.message);}).then(function(){btn.disabled=false;btn.textContent='Save';});
 }
@@ -1333,29 +1333,29 @@ function renderDD(){
   live.sort(function(a,b){return new Date(a.due_date)-new Date(b.due_date);});
   var ltb=document.getElementById('livetb');if(ltb){
     ltb.innerHTML=live.length?live.slice(0,15).map(function(tk){
-      return '<tr>'+
-        '<td>'+pdot(tk.priority,tk.status)+'</td>'+
-        '<td style="font-weight:500">'+esc(tk.name)+'</td>'+
-        '<td style="font-size:12px;color:var(--t2)">'+esc(tk.client_name||'')+'</td>'+
-        '<td>'+catBdg(tk.category)+'</td>'+
-        '<td>'+whoBdg(tk.assignee)+'</td>'+
-        '<td '+dueStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
-        '<td>'+stBdg(tk.status)+'</td>'+
-        '</tr>';
-    }).join(''):'<tr><td colspan="7"><div class="emp"><div class="empt">No pending tasks</div></div></td></tr>';
+      return '\u003ctr\u003e'+
+        '\u003ctd\u003e'+pdot(tk.priority,tk.status)+'\u003c/td\u003e'+
+        '\u003ctd style="font-weight:500"\u003e'+esc(tk.name)+'\u003c/td\u003e'+
+        '\u003ctd style="font-size:12px;color:var(--t2)"\u003e'+esc(tk.client_name||'')+'\u003c/td\u003e'+
+        '\u003ctd\u003e'+catBdg(tk.category)+'\u003c/td\u003e'+
+        '\u003ctd\u003e'+whoBdg(tk.assignee)+'\u003c/td\u003e'+
+        '\u003ctd '+dueStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px"\u003e'+fmt(tk.due_date)+'\u003c/td\u003e'+
+        '\u003ctd\u003e'+stBdg(tk.status)+'\u003c/td\u003e'+
+        '\u003c/tr\u003e';
+    }).join(''):'\u003ctr\u003e\u003ctd colspan="7"\u003e\u003cdiv class="emp"\u003e\u003cdiv class="empt"\u003eNo pending tasks\u003c/div\u003e\u003c/div\u003e\u003c/td\u003e\u003c/tr\u003e';
   }
   // Static calendar
   var items=DD_CAT==='all'?DD_DATA:DD_DATA.filter(function(d){return d.category===DD_CAT;});
   var ddtb=document.getElementById('ddtb');if(ddtb){
     ddtb.innerHTML=items.map(function(d){
       var od=isOD(d.date),sn=isSoon(d.date);
-      return '<tr>'+
-        '<td style="font-weight:600;white-space:nowrap;'+(od?'color:var(--rd)':sn?'color:var(--am)':'color:var(--bl)')+'">'+fmt(d.date)+'</td>'+
-        '<td style="font-weight:500">'+d.task+'</td>'+
-        '<td>'+catBdg(d.category)+'</td>'+
-        '<td style="font-size:12px;color:var(--t2)">'+d.sum+'</td>'+
-        '<td>'+(od?'<span class="bdg br">Overdue</span>':sn?'<span class="bdg ba">Due soon</span>':'<span class="bdg bg">Upcoming</span>')+'</td>'+
-        '</tr>';
+      return '\u003ctr\u003e'+
+        '\u003ctd style="font-weight:600;white-space:nowrap;'+(od?'color:var(--rd)':sn?'color:var(--am)':'color:var(--bl)')+'"\u003e'+fmt(d.date)+'\u003c/td\u003e'+
+        '\u003ctd style="font-weight:500"\u003e'+d.task+'\u003c/td\u003e'+
+        '\u003ctd\u003e'+catBdg(d.category)+'\u003c/td\u003e'+
+        '\u003ctd style="font-size:12px;color:var(--t2)"\u003e'+d.sum+'\u003c/td\u003e'+
+        '\u003ctd\u003e'+(od?'\u003cspan class="bdg br"\u003eOverdue\u003c/span\u003e':sn?'\u003cspan class="bdg ba"\u003eDue soon\u003c/span\u003e':'\u003cspan class="bdg bg"\u003eUpcoming\u003c/span\u003e')+'\u003c/td\u003e'+
+        '\u003c/tr\u003e';
     }).join('');
   }
 }

@@ -729,11 +729,11 @@ function renderPD(){
   el.innerHTML=list.length?list.map(function(d){
     var od=isOD(d.needed_by),sn=isSoon(d.needed_by);
     var cls=od?'br':sn?'ba':'bx';
-    var act=d.received?'<span class="bdg bg">Received</span>':'<button class="btn bts btg" onclick="markRec(\''+d.id+'\')">Received</button>';
+    var act=d.received?'<span class="bdg bg">Received</span>':'<button class="btn bts btg" data-id="'+d.id+'" onclick="markRec(this.dataset.id)">Received</button>';
+    var delBtn=CU&&CU.role==='admin'?'<button class="btn bts btr" data-id="'+d.id+'" onclick="delPD(this.dataset.id)">Del</button>':'';
     return '<div class="dr"><div style="width:28px;height:28px;background:var(--am-b);color:var(--am);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">!</div>'+
       '<div style="flex:1"><div style="font-weight:500">'+esc(d.name)+'</div><div style="font-size:11px;color:var(--t2)">'+esc(d.client_name||'')+' - '+esc(d.category||'')+(d.remarks?' - '+esc(d.remarks):'')+'</div></div>'+
-      '<span class="bdg '+cls+'">'+(d.needed_by?fmt(d.needed_by):'No date')+'</span>'+act+
-      '<button class="btn bts btr" onclick="delPD(\''+d.id+'\')">Del</button></div>';
+      '<span class="bdg '+cls+'">'+(d.needed_by?fmt(d.needed_by):'No date')+'</span>'+act+delBtn+'</div>';
   }).join(''):'<div class="emp">No pending document requests</div>';
 }
 function openPDModal(){document.getElementById('pdid').value='';document.getElementById('pdname').value='';document.getElementById('pddue').value='';document.getElementById('pdrm').value='';fillSel('pdcli');document.getElementById('mo-pd').classList.add('on');}

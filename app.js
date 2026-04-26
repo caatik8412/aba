@@ -1,4 +1,4 @@
-var URL = 'https://script.google.com/macros/s/AKfycbzVCSSljZUzleDp6bbiaKHiZIV82FxDexbS8vCQ3_38osL1CL5cVri0mxBY2hgmdSek/exec';
+var URL = 'https://script.google.com/macros/s/AKfycbyFi7V24AFMMzdqkJnEpBj8Acb7OfdHHQAysXQnXlFkFfK6trkaAeIXQRgTZ5gzyZMg/exec';
 var CU = null, CLIENTS = [], TASKS = [], DOCS = [], PENDING = [];
 var TTAB = 'active', MTAB = 'active', DDCAT = 'all', TIMER = null;
 
@@ -487,7 +487,7 @@ function clientRule(c, rule) {
   if(rule==='hasTDS')     return hasTDS;
   if(rule==='hasPF')      return hasPF;
   if(rule==='pvtLLP')     return isPvt;
-  if(rule==='propOnly')   return isProp&&!hasAudit;
+  if(rule==='propOnly')   return c.tax_scheme!=='presumptive';
   if(rule==='auditOnly')  return hasAudit;
   if(rule==='gstr9')      return hasGSTR9;
   return true;
@@ -567,12 +567,13 @@ function renderGST(res) {
     html+='<td>'+(i+1)+'</td><td style="font-weight:500">'+esc(r.name)+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+esc(r.gstin||'-')+'</td>';
     html+='<td>'+typeBdg+'</td><td style="font-size:12px">'+r1d+'</td>';
+    var mnum = res.month_num || parseInt(document.getElementById('gstm').value);
     html+='<td style="text-align:center"><input type="checkbox" '+(r1c?'checked':'')+
-      ' data-cid="'+r.id+'" data-field="r1" data-year="'+res.year+'" data-month="'+res.month_num+'"'+
+      ' data-cid="'+r.id+'" data-field="r1" data-year="'+res.year+'" data-month="'+mnum+'"'+
       ' onchange="tickGST(this)" style="width:18px;height:18px;cursor:pointer"></td>';
     html+='<td style="font-size:12px">'+r3d+'</td>';
     html+='<td style="text-align:center"><input type="checkbox" '+(r3c?'checked':'')+
-      ' data-cid="'+r.id+'" data-field="r3b" data-year="'+res.year+'" data-month="'+res.month_num+'"'+
+      ' data-cid="'+r.id+'" data-field="r3b" data-year="'+res.year+'" data-month="'+mnum+'"'+
       ' onchange="tickGST(this)" style="width:18px;height:18px;cursor:pointer"></td>';
     html+='</tr>';
   });
@@ -634,7 +635,7 @@ function getActiveCols(m, y) {
     {type:'TDS Payment',        label:'TDS Pay',   rule:function(c){return hasTDS(c);}},
     {type:'PF / ESIC',          label:'PF/ESIC',   rule:function(c){return hasPF(c);}},
     {type:'TDS Returns',        label:'TDS Rtn',   rule:function(c){return hasTDS(c)&&isTQ;}},
-    {type:'Advance Tax',        label:'Adv Tax',   rule:function(c){return isAT&&isProp(c)&&!hasAudit(c);}},
+    {type:'Advance Tax',        label:'Adv Tax',   rule:function(c){return isAT&&c.tax_scheme!=='presumptive';}},
     {type:'ITR Filing',         label:'ITR',       rule:function(c){return isITR;}},
     {type:'Tax Audit',          label:'Tax Audit', rule:function(c){return isAuditM&&hasAudit(c);}},
     {type:'ROC AOC-4',          label:'AOC-4',     rule:function(c){return isROC&&isPvt(c);}},
@@ -1106,7 +1107,7 @@ function getActiveCols(m, y) {
     {type:'TDS Payment',        label:'TDS Pay',   rule:function(c){return hasTDS(c);}},
     {type:'PF / ESIC',          label:'PF/ESIC',   rule:function(c){return hasPF(c);}},
     {type:'TDS Returns',        label:'TDS Rtn',   rule:function(c){return hasTDS(c)&&isTQ;}},
-    {type:'Advance Tax',        label:'Adv Tax',   rule:function(c){return isAT&&isProp(c)&&!hasAudit(c);}},
+    {type:'Advance Tax',        label:'Adv Tax',   rule:function(c){return isAT&&c.tax_scheme!=='presumptive';}},
     {type:'ITR Filing',         label:'ITR',       rule:function(c){return isITR;}},
     {type:'Tax Audit',          label:'Tax Audit', rule:function(c){return isAuditM&&hasAudit(c);}},
     {type:'ROC AOC-4',          label:'AOC-4',     rule:function(c){return isROC&&isPvt(c);}},

@@ -419,6 +419,24 @@ tr:hover td{background:var(--bg)}
  </div>
 </div>
 
+<!-- ASSIGN PICKER MODAL -->
+<div class="mo" id="mo-assign">
+ <div class="md" style="max-width:320px">
+  <div class="mh"><div><div class="mt">Assign Task To</div><div class="ms">Select who should handle this</div></div><button class="mx" onclick="closeMo('mo-assign')">x</button></div>
+  <div class="mb">
+   <div class="fi">
+    <label>Assign To</label>
+    <select id="apsel" style="width:100%;padding:10px 12px;border:1px solid var(--b);border-radius:var(--rs);font-size:14px">
+     <option value="Atik Bhayani">Atik Bhayani</option>
+     <option value="Rushiraj" selected>Rushiraj</option>
+     <option value="Sahil">Sahil</option>
+    </select>
+   </div>
+  </div>
+  <div class="mf"><div></div><div style="display:flex;gap:8px"><button class="btn" onclick="closeMo('mo-assign')">Cancel</button><button class="btn btk" onclick="confirmAssign()">Confirm</button></div></div>
+ </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

@@ -45,7 +45,6 @@ function setup(){
   if(CU.role==='admin'){
     document.getElementById('anav').style.display='block';
     go('dash',document.querySelector('#anav .ni'));
-    document.getElementById('pact').innerHTML='<button class="btn" onclick="openMonthModal()" style="margin-right:6px">+ Monthly Tasks</button><button class="btn btk" onclick="openYearModal()">+ Yearly Tasks</button>';
   } else {
     document.getElementById('snav').style.display='block';
     go('mine',document.querySelector('#snav .ni'));
@@ -99,6 +98,14 @@ function go(pg,el){
   if(el)el.classList.add('on');
   var titles={dash:'Dashboard',tasks:'Tasks',dates:'Due Dates',gst:'GST Compliance',clients:'Clients',pendoc:'Pending Documents',mine:'My Tasks'};
   document.getElementById('ptitle').textContent=titles[pg]||pg;
+  var act=document.getElementById('pact');
+  if(act){
+    if(pg==='clients'&&CU&&CU.role==='admin'){
+      act.innerHTML='<button class="btn btk" onclick="openAddClient()">+ Add Client</button>';
+    } else {
+      act.innerHTML='';
+    }
+  }
   renderPage(pg);
 }
 
@@ -107,11 +114,15 @@ function renderPage(pg){
   if(pg==='tasks'){fillSel('tscl');renderTasks();}
   if(pg==='dates'){
     fillSel('ddcli');
-    var now=new Date();
+    // Only set month on first visit
     var ddm=document.getElementById('ddmon');
     var ddy=document.getElementById('ddyr');
-    if(ddm){ddm.value=now.getMonth()+1;}
-    if(ddy){ddy.value=now.getFullYear();}
+    if(ddm&&!ddm.dataset.init){
+      var now=new Date();
+      ddm.value=now.getMonth()+1;
+      ddy.value=now.getFullYear();
+      ddm.dataset.init='1';
+    }
     renderDD();
   }
   if(pg==='gst')initGST();
@@ -218,7 +229,7 @@ function genDueDates(dispMonth, dispYear){
 
   CLIENTS.forEach(function(c){
     // Skip if client was added after period
-    var cstart=c.start_date?new Date(c.start_date):new Date('2026-04-01');
+    var cstart=c.start_date?new Date(c.start_date):new Date('2025-04-01');
     var periodEnd=new Date(py,pm-1,28);
     if(cstart>periodEnd)return;
 
@@ -368,7 +379,6 @@ function setTTab(tab,el){
   TTAB=tab;
   document.querySelectorAll('#p-tasks .tabs .tab').forEach(function(t){t.classList.remove('on');});
   if(el)el.classList.add('on');
-  var btn=document.getElementById('addtbtn');if(btn)btn.style.display=tab==='done'?'none':'block';
   renderTasks();
 }
 function renderTasks(){
@@ -421,16 +431,7 @@ function markDone(id){
 function revertT(id){var t=getT(id);if(!t)return;t.status='pending';sync(true);api('saveTask',t).then(function(){sync(false);renderTasks();renderDash();});}
 function delT(id){if(!confirm('Delete this task?'))return;sync(true);api('delTask',{id:id}).then(function(){TASKS=TASKS.filter(function(t){return t.id!==id;});sync(false);renderTasks();renderDash();});}
 
-function openTaskModal(){
-  document.getElementById('tmtit').textContent='Add Task';
-  document.getElementById('tid').value='';document.getElementById('tddid').value='';
-  document.getElementById('tname').value='';document.getElementById('tdue').value='';
-  document.getElementById('trm').value='';document.getElementById('tsts').value='pending';
-  document.getElementById('tpri').value='medium';document.getElementById('tcat').value='GST';
-  var ad=document.getElementById('tassdiv'),as=document.getElementById('tass');
-  if(CU.role==='staff'){as.value=CU.name;ad.style.display='none';}else{ad.style.display='block';as.value='Atik Bhayani';}
-  fillSel('tcli');document.getElementById('mo-task').classList.add('on');
-}
+
 function openEditTask(id){
   var tk=getT(id);if(!tk)return;
   document.getElementById('tmtit').textContent='Edit Task';
@@ -720,79 +721,13 @@ function markRec(id){var d=PENDING.find(function(x){return x.id===id;});if(!d)re
 function delPD(id){if(!confirm('Delete?'))return;sync(true);api('delPD',{id:id}).then(function(){PENDING=PENDING.filter(function(d){return d.id!==id;});sync(false);renderPD();renderDash();});}
 
 // MONTHLY TASKS MODAL
-function openMonthModal(){
-  var mm=document.getElementById('mmm'),my=document.getElementById('mmy');
-  if(!mm.options.length){
-    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-    months.forEach(function(m,i){var o=document.createElement('option');o.value=i+1;o.text=m;mm.appendChild(o);});
-    var now=new Date();mm.value=now.getMonth()+1;
-    for(var y=2026;y<=2028;y++){var o=document.createElement('option');o.value=y;o.text=y;my.appendChild(o);}
-    my.value=now.getFullYear();
-  }
-  buildMonthTable();document.getElementById('mo-month').classList.add('on');
-}
-function buildMonthTable(){
-  var m=parseInt(document.getElementById('mmm').value),y=parseInt(document.getElementById('mmy').value);
-  var isQE=(m%3===0),nm=m===12?1:m+1,ny=m===12?y+1:y;
-  var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
-  document.getElementById('mmtit').textContent=mname+' '+y;
-  var body=document.getElementById('mmtb');
-  body.innerHTML=CLIENTS.filter(function(c){return c.gst_type&&c.gst_type!=='none';}).map(function(c){
-    var g=c.gst_type||'regular',f=c.gst_freq||'monthly',emp=c.has_employees==='yes';
-    var tasks=[];
-    if(g==='regular'&&f==='monthly')tasks=['GSTR-1','GSTR-3B'];
-    else if(g==='regular'&&f==='quarterly')tasks=isQE?['GSTR-1 Qtr','GSTR-3B Qtr']:['PMT-06'];
-    else if(g==='composition'&&isQE)tasks=['CMP-08'];
-    if(emp)tasks=tasks.concat(['TDS Payment','PF/ESIC']);
-    return '<tr><td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+(tasks.join(', ')||'-')+'</td>'+
-      '<td><select class="btn mm-asgn" data-cid="'+c.id+'" style="font-size:12px"><option value="Atik Bhayani">Atik Bhayani</option><option value="Rushiraj" selected>Rushiraj</option><option value="Sahil">Sahil</option></select></td></tr>';
-  }).join('');
-}
-function setAllMA(n){document.querySelectorAll('.mm-asgn').forEach(function(s){s.value=n;});}
-function createMonthTasks(){
-  var m=parseInt(document.getElementById('mmm').value),y=parseInt(document.getElementById('mmy').value);
-  var asgn={};document.querySelectorAll('.mm-asgn').forEach(function(s){asgn[s.dataset.cid]=s.value;});
-  var btn=document.getElementById('mmbtn');btn.disabled=true;btn.textContent='Creating...';sync(true);
-  api('autoTasks',{year:y,month:m,assignees:asgn}).then(function(r){
-    sync(false);btn.disabled=false;btn.textContent='Create Tasks';closeMo('mo-month');
-    if(r.ok){alert('Created '+r.created+' tasks for '+r.month);return api('getAll').then(function(a){if(a.ok){TASKS=a.tasks||[];renderDash();}});}
-    else alert('Error: '+r.error);
-  }).catch(function(e){sync(false);btn.disabled=false;btn.textContent='Create Tasks';alert('Error: '+e.message);});
-}
 
-// YEARLY TASKS MODAL
-function openYearModal(){
-  var yy=document.getElementById('yry');
-  if(!yy.options.length){for(var y=2026;y<=2030;y++){var o=document.createElement('option');o.value=y;o.text='FY '+y;yy.appendChild(o);}yy.value=new Date().getFullYear();}
-  buildYearTable();document.getElementById('mo-year').classList.add('on');
-}
-function buildYearTable(){
-  var body=document.getElementById('yrtb');
-  body.innerHTML=CLIENTS.map(function(c){
-    var audit=c.turnover==='above1cr',pvt=c.entity==='Private Limited'||c.entity==='LLP';
-    var prop=c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF',emp=c.has_employees==='yes';
-    var tasks=[];
-    if(audit)tasks.push('ITR(Oct)','Tax Audit');else tasks.push('ITR(Aug)');
-    if(pvt)tasks.push('AOC-4','MGT-7');
-    if(prop)tasks.push('Adv Tax x4');
-    if(emp)tasks.push('TDS Returns x4');
-    return '<tr><td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
-      '<td style="font-size:11px;color:var(--t2)">'+tasks.join(', ')+'</td>'+
-      '<td><select class="btn yr-asgn" data-cid="'+c.id+'" style="font-size:12px"><option value="Atik Bhayani" selected>Atik Bhayani</option><option value="Rushiraj">Rushiraj</option><option value="Sahil">Sahil</option></select></td></tr>';
-  }).join('');
-}
-function setAllYA(n){document.querySelectorAll('.yr-asgn').forEach(function(s){s.value=n;});}
-function createYearTasks(){
-  var y=parseInt(document.getElementById('yry').value);
-  var asgn={};document.querySelectorAll('.yr-asgn').forEach(function(s){asgn[s.dataset.cid]=s.value;});
-  var btn=document.getElementById('yrbtn');btn.disabled=true;btn.textContent='Creating...';sync(true);
-  api('yearTasks',{year:y,assignees:asgn}).then(function(r){
-    sync(false);btn.disabled=false;btn.textContent='Create Tasks';closeMo('mo-year');
-    if(r.ok){alert('Created '+r.created+' yearly tasks for '+y);return api('getAll').then(function(a){if(a.ok){TASKS=a.tasks||[];renderDash();}});}
-    else alert('Error: '+r.error);
-  }).catch(function(e){sync(false);btn.disabled=false;btn.textContent='Create Tasks';alert('Error: '+e.message);});
-}
+
+
+
+
+
+
 
 function closeMo(id){document.getElementById(id).classList.remove('on');}
 document.addEventListener('click',function(e){if(e.target.classList.contains('mo'))e.target.classList.remove('on');});

@@ -129,7 +129,7 @@ tr:hover td{background:var(--bg)}
   <div class="lcard">
     <div class="llogo"><div class="lmark">CA</div><h1>CA AB Associates</h1><p>Practice Management System</p></div>
     <div class="lf">
-      <div class="lfl"><label>Username</label><input type="text" id="lu" placeholder="atik / rushiraj / sahil" autocomplete="username"></div>
+      <div class="lfl"><label>Username</label><input type="text" id="lu" placeholder="Enter username" autocomplete="username"></div>
       <div class="lfl"><label>Password</label><input type="password" id="lp" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="lerr" id="le"></div>
       <button class="lbtn" id="lbtn" onclick="doLogin()">Sign in</button>
@@ -160,8 +160,6 @@ tr:hover td{background:var(--bg)}
    <div id="ns" style="display:none">
     <div class="nvsec">My Work</div>
     <div class="nvi" onclick="nav('mine',this)"><span class="nvic">T</span><span>My Tasks</span></div>
-    <div class="nvsec">GST</div>
-    <div class="nvi" onclick="nav('gst',this)"><span class="nvic">G</span><span>GST Compliance</span></div>
     <div class="nvsec">Documents</div>
     <div class="nvi" onclick="nav('pendoc',this)"><span class="nvic">P</span><span>Pending Docs</span></div>
    </div>

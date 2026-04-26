@@ -330,13 +330,21 @@ function renderDD(){
       if(linked.status==='done'){
         actionCell='<span style="color:var(--gr);font-size:18px">&#10003;</span>';
       } else {
-        actionCell='<button class="btn bts" onclick="openEditTask(\''+linked.id+'\')" style="margin-right:4px">Edit</button>'+
-          '<button class="btn bts btg" onclick="ddMarkDone(\''+linked.id+'\',\''+d.ddid+'\')">&#10003; Done</button>';
+        actionCell=
+          '<button class="btn bts" data-id="'+linked.id+'" onclick="openEditTask(this.dataset.id)">Edit</button> '+
+          '<button class="btn bts btg" data-id="'+linked.id+'" data-ddid="'+d.ddid+'" onclick="ddMarkDone(this.dataset.id,this.dataset.ddid)">&#10003; Done</button>';
       }
     } else {
       statusCell='<span class="bdg bx">Not started</span>';
-      actionCell='<button class="btn bts" onclick="ddAddTask(\''+esc(d.ddid)+'\',\''+esc(d.cid)+'\',\''+esc(d.type)+'\',\''+esc(d.due)+'\',\''+esc(compName)+'\',\''+esc(d.cat)+'\')" style="margin-right:4px">+ Task</button>'+
-        '<button class="btn bts btg" onclick="ddFiledDirect(\''+esc(d.ddid)+'\',\''+esc(d.cid)+'\',\''+esc(d.type)+'\',\''+esc(d.due)+'\',\''+esc(compName)+'\',\''+esc(d.cat)+'\')">&#10003; Done</button>';
+      actionCell=
+        '<button class="btn bts" '+
+          'data-ddid="'+d.ddid+'" data-cid="'+d.cid+'" data-type="'+d.type+'" '+
+          'data-due="'+d.due+'" data-name="'+esc(compName)+'" data-cat="'+d.cat+'" '+
+          'onclick="ddAddTask(this)" style="margin-right:4px">+ Task</button>'+
+        '<button class="btn bts btg" '+
+          'data-ddid="'+d.ddid+'" data-cid="'+d.cid+'" data-type="'+d.type+'" '+
+          'data-due="'+d.due+'" data-name="'+esc(compName)+'" data-cat="'+d.cat+'" '+
+          'onclick="ddFiledDirect(this)">&#10003; Done</button>';
     }
     return '<tr>'+
       '<td style="'+dateStyle+';white-space:nowrap;font-size:12px;font-weight:600">'+fmt(d.due)+'</td>'+
@@ -349,7 +357,10 @@ function renderDD(){
   }).join('');
 }
 
-function ddAddTask(ddid,cid,type,due,name,cat){
+
+function ddAddTask(el){
+  var ddid=el.dataset.ddid,cid=el.dataset.cid,type=el.dataset.type;
+  var due=el.dataset.due,name=el.dataset.name,cat=el.dataset.cat;
   if(findLinkedTask(ddid)){alert('Task already exists for this due date.');return;}
   // Open task modal pre-filled, linked to due date
   document.getElementById('tmtit').textContent='Add Task';
@@ -368,7 +379,9 @@ function ddAddTask(ddid,cid,type,due,name,cat){
   document.getElementById('mo-task').classList.add('on');
 }
 
-function ddFiledDirect(ddid,cid,type,due,name,cat){
+function ddFiledDirect(el){
+  var ddid=el.dataset.ddid,cid=el.dataset.cid,type=el.dataset.type;
+  var due=el.dataset.due,name=el.dataset.name,cat=el.dataset.cat;
   if(findLinkedTask(ddid)){renderDD();return;} // already exists
   var c=gc(cid);if(!c)return;
   var task={id:uid(),dd_id:ddid,name:name,client_id:cid,client_name:c.short_name||c.name,

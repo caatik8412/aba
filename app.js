@@ -197,9 +197,13 @@ function renderDash(){
       whoBdg(t.assignee)+
       '<div '+dStyle(t.due_date,t.status)+' style="font-size:11px;min-width:70px;text-align:right">'+fmt(t.due_date)+'</div></div>';
   }).join(''):'<div class="emp">All tasks up to date</div>';
-  // Upcoming due dates this month
+  // Upcoming due dates - current + next month, not overdue
   var now=new Date(),m=now.getMonth()+1,y=now.getFullYear();
-  var dues=genDueDates(m,y).filter(function(d){return !isOD(d.due);}).slice(0,8);
+  var nm=m===12?1:m+1, ny=m===12?y+1:y;
+  var dues=genDueDates(m,y).concat(genDueDates(nm,ny));
+  dues=dues.filter(function(d){return !isOD(d.due);});
+  dues.sort(function(a,b){return new Date(a.due)-new Date(b.due);});
+  dues=dues.slice(0,8);
   document.getElementById('ddates').innerHTML=dues.length?dues.map(function(d){
     var linked=findLinkedTask(d.ddid);
     var st=linked?(linked.status==='done'?'<span class="bdg bg">Done</span>':stBdg(linked.status)):'<span class="bdg bx">Not started</span>';

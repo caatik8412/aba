@@ -1,4 +1,4 @@
-var URL = 'https://script.google.com/macros/s/AKfycbx2fNc9ribnFkaZN5nuT4N9tSK_y5UmmHAUZCzXcCchm4EdD4Tk5cjImFGAPxQvwPJ1/exec';
+var URL = 'https://script.google.com/macros/s/AKfycbwdwjEuAnNE3qS9ZTGbRa5Pe0CICY_Td54mpE0E-MvTMReQRSzp9w1sg_zuqnR3Z8uS/exec';
 var CU = null, CLIENTS = [], TASKS = [], DOCS = [], PENDING = [];
 var TTAB = 'active', MTAB = 'active', DDCAT = 'all', TIMER = null;
 
@@ -102,7 +102,7 @@ function go(pg, el) {
 function renderPage(pg) {
   if (pg === 'dash')    renderDash();
   if (pg === 'tasks')   renderTasks();
-  if (pg === 'dates')   renderDates();
+  if (pg === 'dates')   { fillSel('ddcli'); renderDates(); }
   if (pg === 'gst')     initGST();
   if (pg === 'matrix')  initMatrix();
   if (pg === 'clients') renderClients();
@@ -140,7 +140,7 @@ function pdot(d,s) {
 }
 function dStyle(d,s) { if(s==='done') return ''; if(isOD(d)) return 'style="color:var(--rd);font-weight:600"'; if(isSoon(d)) return 'style="color:var(--am);font-weight:500"'; return ''; }
 
-function fillSelects() { fillSel('tscl'); fillSel('tcli'); fillSel('mscl'); fillSel('doccl'); fillSel('doccli'); fillSel('pdcl'); fillSel('pdcli'); }
+function fillSelects() { fillSel('tscl'); fillSel('tcli'); fillSel('mscl'); fillSel('doccl'); fillSel('doccli'); fillSel('pdcl'); fillSel('pdcli'); fillSel('ddcli'); }
 function fillSel(id) {
   var el=document.getElementById(id); if(!el) return;
   var cur=el.value; var isSel=(id==='tcli'||id==='doccli'||id==='pdcli');
@@ -354,27 +354,110 @@ function stfDone(id) {
 
 // ---- DUE DATES ----
 var CAL_DATA=[
-  {date:'2026-05-07',lbl:'7 May',task:'TDS Payment - Apr 2026',cat:'TDS'},
-  {date:'2026-05-11',lbl:'11 May',task:'GSTR-1 - Apr 2026',cat:'GST'},
-  {date:'2026-05-15',lbl:'15 May',task:'PF/ESIC - Apr 2026',cat:'PF / ESIC'},
-  {date:'2026-05-20',lbl:'20 May',task:'GSTR-3B - Apr 2026',cat:'GST'},
-  {date:'2026-05-31',lbl:'31 May',task:'TDS Return Q4 FY25-26',cat:'TDS'},
-  {date:'2026-06-11',lbl:'11 Jun',task:'GSTR-1 - May 2026',cat:'GST'},
-  {date:'2026-06-15',lbl:'15 Jun',task:'Advance Tax 1st Installment',cat:'Income Tax'},
-  {date:'2026-06-20',lbl:'20 Jun',task:'GSTR-3B - May 2026',cat:'GST'},
-  {date:'2026-07-11',lbl:'11 Jul',task:'GSTR-1 - Jun 2026',cat:'GST'},
-  {date:'2026-07-20',lbl:'20 Jul',task:'GSTR-3B - Jun 2026',cat:'GST'},
-  {date:'2026-07-31',lbl:'31 Jul',task:'TDS Return Q1 FY26-27',cat:'TDS'},
-  {date:'2026-08-31',lbl:'31 Aug',task:'ITR Filing - Business clients',cat:'Income Tax'},
-  {date:'2026-09-15',lbl:'15 Sep',task:'Advance Tax 2nd Installment',cat:'Income Tax'},
-  {date:'2026-09-30',lbl:'30 Sep',task:'Tax Audit Form 3CD',cat:'Audit'},
-  {date:'2026-10-31',lbl:'31 Oct',task:'ITR - Audit cases + TDS Return Q2',cat:'Income Tax'},
-  {date:'2026-11-29',lbl:'29 Nov',task:'ROC MGT-7 Annual Return',cat:'ROC / MCA'},
-  {date:'2026-12-15',lbl:'15 Dec',task:'Advance Tax 3rd Installment',cat:'Income Tax'},
-  {date:'2027-01-31',lbl:'31 Jan',task:'TDS Return Q3 FY26-27',cat:'TDS'},
-  {date:'2027-03-15',lbl:'15 Mar',task:'Advance Tax 4th Installment',cat:'Income Tax'},
-  {date:'2027-03-31',lbl:'31 Mar',task:'ROC AOC-4 Financial Statements',cat:'ROC / MCA'},
-  {date:'2027-05-31',lbl:'31 May',task:'TDS Return Q4 FY26-27',cat:'TDS'}
+  {date:'2026-04-07',lbl:'7 Apr',task:'TCS Payment | March 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-04-11',lbl:'11 Apr',task:'GSTR 1 (Monthly) | March 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-04-13',lbl:'13 Apr',task:'GSTR 1 Q4 FY 25-26 (QRMP) | Jan-Mar 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-04-15',lbl:'15 Apr',task:'PF / ESIC Payment | March 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-04-18',lbl:'18 Apr',task:'GST CMP-08 | Q4 FY 2025-26',cat:'GST',rule:'gstComp'},
+  {date:'2026-04-30',lbl:'30 Apr',task:'TDS Payment (March) | March 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-04-30',lbl:'30 Apr',task:'QRMP Election Window closes | Q1 FY 2026-27 (opt-in/out: 1-30 Apr)',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-04-30',lbl:'30 Apr',task:'MSME Form I (Half-Yearly) | Oct 2025-Mar 2026 outstanding payments',cat:'ROC / MCA',rule:'pvtLLP'},
+  {date:'2026-05-07',lbl:'7 May',task:'TDS/TCS Payment | April 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-05-11',lbl:'11 May',task:'GSTR 1 (Monthly) | April 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-05-13',lbl:'13 May',task:'IFF (QRMP) | April 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-05-15',lbl:'15 May',task:'TCS Return Q4 | FY 2025-26',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-05-15',lbl:'15 May',task:'PF / ESIC Payment | April 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-05-25',lbl:'25 May',task:'GST PMT-06 (QRMP) | April 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-05-30',lbl:'30 May',task:'TCS Certificate Q4 | FY 2025-26',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-05-30',lbl:'30 May',task:'LLP Form 11 - Annual Return | FY 2025-26',cat:'ROC / MCA',rule:'pvtLLP'},
+  {date:'2026-05-31',lbl:'31 May',task:'TDS Return Q4 | FY 2025-26',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-06-07',lbl:'7 Jun',task:'TDS/TCS Payment | May 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-06-11',lbl:'11 Jun',task:'GSTR 1 (Monthly) | May 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-06-13',lbl:'13 Jun',task:'IFF (QRMP) | May 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-06-15',lbl:'15 Jun',task:'TDS Certificate Q4 | FY 2025-26',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-06-15',lbl:'15 Jun',task:'Advance Tax 1st Instalment | TY 2026-27 . minimum 15% of tax liability',cat:'Income Tax',rule:'propOnly'},
+  {date:'2026-06-15',lbl:'15 Jun',task:'PF / ESIC Payment | May 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-06-25',lbl:'25 Jun',task:'GST PMT-06 (QRMP) | May 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-06-30',lbl:'30 Jun',task:'Equalisation Levy Statement | FY 2025-26',cat:'Other',rule:'allClients'},
+  {date:'2026-06-30',lbl:'30 Jun',task:'GSTR 4 | FY 2025-26',cat:'GST',rule:'gstAll'},
+  {date:'2026-07-07',lbl:'7 Jul',task:'TDS/TCS Payment | June 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-07-11',lbl:'11 Jul',task:'GSTR 1 (Monthly) | June 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-07-13',lbl:'13 Jul',task:'GSTR 1 Q1 FY 26-27 (QRMP) | Apr-Jun 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-07-15',lbl:'15 Jul',task:'TCS Return Q1 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-07-15',lbl:'15 Jul',task:'PF / ESIC Payment | June 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-07-18',lbl:'18 Jul',task:'GST CMP-08 | Q1 FY 2026-27',cat:'GST',rule:'gstComp'},
+  {date:'2026-07-30',lbl:'30 Jul',task:'TCS Certificate Q1 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-07-31',lbl:'31 Jul',task:'TDS Return Q1 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-07-31',lbl:'31 Jul',task:'ITR Filing - Non-Audit (ITR 1 & ITR 2) | AY 2026-27',cat:'Income Tax',rule:'allClients'},
+  {date:'2026-07-31',lbl:'31 Jul',task:'QRMP Election Window closes | Q2 FY 2026-27 (opt-in/out: 1-31 Jul)',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-08-07',lbl:'7 Aug',task:'TDS/TCS Payment | July 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-08-11',lbl:'11 Aug',task:'GSTR 1 (Monthly) | July 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-08-13',lbl:'13 Aug',task:'IFF (QRMP) | July 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-08-15',lbl:'15 Aug',task:'TDS Certificate Q1 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-08-15',lbl:'15 Aug',task:'PF / ESIC Payment | July 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-08-25',lbl:'25 Aug',task:'GST PMT-06 (QRMP) | July 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-08-31',lbl:'31 Aug',task:'ITR Filing - Non-Audit (ITR 3, ITR 4 & ITR 5) | AY 2026-27',cat:'Income Tax',rule:'allClients'},
+  {date:'2026-09-07',lbl:'7 Sep',task:'TDS/TCS Payment | August 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-09-11',lbl:'11 Sep',task:'GSTR 1 (Monthly) | August 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-09-13',lbl:'13 Sep',task:'IFF (QRMP) | August 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-09-15',lbl:'15 Sep',task:'Advance Tax 2nd Instalment | TY 2026-27 . cumulative 45% of tax liability',cat:'Income Tax',rule:'propOnly'},
+  {date:'2026-09-15',lbl:'15 Sep',task:'PF / ESIC Payment | August 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-09-25',lbl:'25 Sep',task:'GST PMT-06 (QRMP) | August 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-09-30',lbl:'30 Sep',task:'Tax Audit Report | AY 2026-27',cat:'Income Tax',rule:'auditOnly'},
+  {date:'2026-09-30',lbl:'30 Sep',task:'AGM | FY 2025-26 (Listed & Unlisted)',cat:'ROC / MCA',rule:'allClients'},
+  {date:'2026-10-07',lbl:'7 Oct',task:'TDS/TCS Payment | September 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-10-11',lbl:'11 Oct',task:'GSTR 1 (Monthly) | September 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-10-13',lbl:'13 Oct',task:'GSTR 1 Q2 FY 26-27 (QRMP) | Jul-Sep 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-10-15',lbl:'15 Oct',task:'TCS Return Q2 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-10-15',lbl:'15 Oct',task:'PF / ESIC Payment | September 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-10-15',lbl:'15 Oct',task:'ADT-1 - Auditor Appointment | Within 15 days of AGM',cat:'ROC / MCA',rule:'allClients'},
+  {date:'2026-10-18',lbl:'18 Oct',task:'GST CMP-08 | Q2 FY 2026-27',cat:'GST',rule:'gstComp'},
+  {date:'2026-10-30',lbl:'30 Oct',task:'TCS Certificate Q2 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-10-30',lbl:'30 Oct',task:'AOC-4 - Financial Statements | Within 30 days of AGM',cat:'ROC / MCA',rule:'pvtLLP'},
+  {date:'2026-10-30',lbl:'30 Oct',task:'LLP Form 8 - Accounts & Solvency | FY 2025-26',cat:'ROC / MCA',rule:'allClients'},
+  {date:'2026-10-31',lbl:'31 Oct',task:'TDS Return Q2 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-10-31',lbl:'31 Oct',task:'ITR Filing (Audit Cases) | AY 2026-27',cat:'Income Tax',rule:'allClients'},
+  {date:'2026-10-31',lbl:'31 Oct',task:'Transfer Pricing Audit | AY 2026-27',cat:'Income Tax',rule:'allClients'},
+  {date:'2026-10-31',lbl:'31 Oct',task:'QRMP Election Window closes | Q3 FY 2026-27 (opt-in/out: 1-31 Oct)',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-10-31',lbl:'31 Oct',task:'MSME Form I (Half-Yearly) | Apr-Sep 2026 outstanding payments',cat:'ROC / MCA',rule:'pvtLLP'},
+  {date:'2026-11-07',lbl:'7 Nov',task:'TDS/TCS Payment | October 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-11-11',lbl:'11 Nov',task:'GSTR 1 (Monthly) | October 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-11-13',lbl:'13 Nov',task:'IFF (QRMP) | October 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-11-15',lbl:'15 Nov',task:'TDS Certificate Q2 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-11-15',lbl:'15 Nov',task:'PF / ESIC Payment | October 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-11-25',lbl:'25 Nov',task:'GST PMT-06 (QRMP) | October 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-11-29',lbl:'29 Nov',task:'MGT-7 / 7A - Annual Return | Within 60 days of AGM',cat:'ROC / MCA',rule:'pvtLLP'},
+  {date:'2026-11-30',lbl:'30 Nov',task:'ITR - Transfer Pricing Cases (S. 92E) | AY 2026-27',cat:'Income Tax',rule:'allClients'},
+  {date:'2026-12-07',lbl:'7 Dec',task:'TDS/TCS Payment | November 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2026-12-11',lbl:'11 Dec',task:'GSTR 1 (Monthly) | November 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2026-12-13',lbl:'13 Dec',task:'IFF (QRMP) | November 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-12-15',lbl:'15 Dec',task:'Advance Tax 3rd Instalment | TY 2026-27 . cumulative 75% of tax liability',cat:'Income Tax',rule:'propOnly'},
+  {date:'2026-12-15',lbl:'15 Dec',task:'PF / ESIC Payment | November 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2026-12-25',lbl:'25 Dec',task:'GST PMT-06 (QRMP) | November 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2026-12-31',lbl:'31 Dec',task:'Belated ITR | AY 2026-27',cat:'Income Tax',rule:'allClients'},
+  {date:'2026-12-31',lbl:'31 Dec',task:'GSTR 9 / GSTR 9C | FY 2025-26',cat:'GST',rule:'gstAll'},
+  {date:'2027-01-07',lbl:'7 Jan',task:'TDS/TCS Payment | December 2026',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-01-11',lbl:'11 Jan',task:'GSTR 1 (Monthly) | December 2026',cat:'GST',rule:'gstMonthly'},
+  {date:'2027-01-13',lbl:'13 Jan',task:'GSTR 1 Q3 FY 26-27 (QRMP) | Oct-Dec 2026',cat:'GST',rule:'gstQRMP'},
+  {date:'2027-01-15',lbl:'15 Jan',task:'TCS Return Q3 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-01-15',lbl:'15 Jan',task:'PF / ESIC Payment | December 2026',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2027-01-18',lbl:'18 Jan',task:'GST CMP-08 | Q3 FY 2026-27',cat:'GST',rule:'gstComp'},
+  {date:'2027-01-30',lbl:'30 Jan',task:'TCS Certificate Q3 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-01-31',lbl:'31 Jan',task:'TDS Return Q3 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-01-31',lbl:'31 Jan',task:'QRMP Election Window closes | Q4 FY 2026-27 (opt-in/out: 1-31 Jan)',cat:'GST',rule:'gstQRMP'},
+  {date:'2027-02-07',lbl:'7 Feb',task:'TDS/TCS Payment | January 2027',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-02-11',lbl:'11 Feb',task:'GSTR 1 (Monthly) | January 2027',cat:'GST',rule:'gstMonthly'},
+  {date:'2027-02-13',lbl:'13 Feb',task:'IFF (QRMP) | January 2027',cat:'GST',rule:'gstQRMP'},
+  {date:'2027-02-15',lbl:'15 Feb',task:'TDS Certificate Q3 | TY 2026-27',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-02-15',lbl:'15 Feb',task:'PF / ESIC Payment | January 2027',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2027-02-25',lbl:'25 Feb',task:'GST PMT-06 (QRMP) | January 2027',cat:'GST',rule:'gstQRMP'},
+  {date:'2027-03-07',lbl:'7 Mar',task:'TDS/TCS Payment | February 2027',cat:'TDS',rule:'hasTDS'},
+  {date:'2027-03-11',lbl:'11 Mar',task:'GSTR 1 (Monthly) | February 2027',cat:'GST',rule:'gstMonthly'},
+  {date:'2027-03-13',lbl:'13 Mar',task:'IFF (QRMP) | February 2027',cat:'GST',rule:'gstQRMP'},
+  {date:'2027-03-15',lbl:'15 Mar',task:'Advance Tax 4th Instalment | TY 2026-27 . 100% of tax liability',cat:'Income Tax',rule:'propOnly'},
+  {date:'2027-03-15',lbl:'15 Mar',task:'PF / ESIC Payment | February 2027',cat:'PF / ESIC',rule:'hasPF'},
+  {date:'2027-03-25',lbl:'25 Mar',task:'GST PMT-06 (QRMP) | February 2027',cat:'GST',rule:'gstQRMP'},
+  {date:'2027-03-31',lbl:'31 Mar',task:'Revised ITR | AY 2026-27',cat:'Income Tax',rule:'allClients'}
 ];
 
 function setDdTab(cat,el) {
@@ -383,12 +466,38 @@ function setDdTab(cat,el) {
   if(el) el.classList.add('on');
   renderDates();
 }
+function clientRule(c, rule) {
+  if (!c) return true;
+  var g=c.gst_type||'none', f=c.gst_freq||'monthly';
+  var ent=c.entity||'';
+  var isPvt=ent==='Private Limited'||ent==='LLP';
+  var isProp=ent==='Proprietorship'||ent==='Partnership'||ent==='HUF';
+  var hasTDS=c.tds_applicable==='yes';
+  var hasPF=c.pf_esic_applicable==='yes';
+  var hasAudit=c.tax_scheme==='audit';
+  var hasGSTR9=c.gstr9_applicable==='yes';
+  if(rule==='gstMonthly') return g==='regular'&&f==='monthly';
+  if(rule==='gstQRMP')    return g==='regular'&&f==='quarterly';
+  if(rule==='gstComp')    return g==='composition';
+  if(rule==='gstAll')     return g!=='none';
+  if(rule==='hasTDS')     return hasTDS;
+  if(rule==='hasPF')      return hasPF;
+  if(rule==='pvtLLP')     return isPvt;
+  if(rule==='propOnly')   return isProp&&!hasAudit;
+  if(rule==='auditOnly')  return hasAudit;
+  if(rule==='gstr9')      return hasGSTR9;
+  return true;
+}
+
 function renderDates() {
+  var selCli=(document.getElementById('ddcli')||{value:''}).value;
+  var selClient=selCli?gc(selCli):null;
   var live=TASKS.filter(function(t){return t.status!=='done';});
+  if(selCli) live=live.filter(function(t){return t.client_id===selCli;});
   if(DDCAT!=='all') live=live.filter(function(t){return t.category===DDCAT;});
   live.sort(function(a,b){return new Date(a.due_date)-new Date(b.due_date);});
   var ltb=document.getElementById('ltb');
-  ltb.innerHTML=live.length?live.slice(0,15).map(function(tk){
+  ltb.innerHTML=live.length?live.slice(0,20).map(function(tk){
     return '<tr><td>'+pdot(tk.due_date,tk.status)+'</td>'+
       '<td style="font-weight:500">'+esc(tk.name)+'</td>'+
       '<td style="font-size:12px;color:var(--t2)">'+esc(tk.client_name||'')+'</td>'+
@@ -397,7 +506,11 @@ function renderDates() {
       '<td '+dStyle(tk.due_date,tk.status)+' style="white-space:nowrap;font-size:12px">'+fmt(tk.due_date)+'</td>'+
       '<td>'+stBdg(tk.status)+'</td></tr>';
   }).join(''):'<tr><td colspan="7"><div class="emp">No pending tasks</div></td></tr>';
-  var items=DDCAT==='all'?CAL_DATA:CAL_DATA.filter(function(d){return d.cat===DDCAT;});
+  var items=CAL_DATA.filter(function(d){
+    var catOk=DDCAT==='all'||d.cat===DDCAT;
+    var ruleOk=clientRule(selClient,d.rule);
+    return catOk&&ruleOk;
+  });
   var caltb=document.getElementById('caltb');
   caltb.innerHTML=items.map(function(d){
     var od=isOD(d.date),sn=isSoon(d.date);
@@ -409,8 +522,7 @@ function renderDates() {
   }).join('');
 }
 
-// ---- GST ----
-var GST_TICKS = {};
+
 function initGST() {
   var gm=document.getElementById('gstm'), gy=document.getElementById('gsty');
   if(!gm.options.length) {
@@ -490,23 +602,32 @@ function tickGST(cid, field, val, year, month) {
 
 // ---- COMPLIANCE MATRIX ----
 function getActiveCols(m, y) {
-  var isQE=(m%3===0), isTQ=(m===7||m===10||m===1||m===5), isAT=(m===6||m===9||m===12||m===3);
-  var isITR=(m>=7&&m<=10), isAudit=(m===9||m===10), isROC=(m===10||m===11);
+  var isQE=(m%3===0), isTQ=(m===7||m===10||m===1||m===5);
+  var isAT=(m===6||m===9||m===12||m===3);
+  var isITR=(m>=7&&m<=10), isAuditM=(m===9||m===10), isROC=(m===10||m===11);
+  var isGSTR9M=(m===12||m===1);
+  function hasTDS(c)   { return c.tds_applicable==='yes'; }
+  function hasPF(c)    { return c.pf_esic_applicable==='yes'; }
+  function hasAudit(c) { return c.tax_scheme==='audit'; }
+  function hasGSTR9(c) { return c.gstr9_applicable==='yes'; }
+  function isPvt(c)    { return c.entity==='Private Limited'||c.entity==='LLP'; }
+  function isProp(c)   { return c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF'; }
   var cols=[
-    {type:'GSTR-1',label:'GSTR-1',rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='monthly';}},
-    {type:'GSTR-3B',label:'GSTR-3B',rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='monthly';}},
-    {type:'GSTR-1 (Quarterly)',label:'R1 Qtr',rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&isQE;}},
-    {type:'GSTR-3B (Quarterly)',label:'3B Qtr',rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&isQE;}},
-    {type:'PMT-06',label:'PMT-06',rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&!isQE;}},
-    {type:'CMP-08',label:'CMP-08',rule:function(c){return c.gst_type==='composition'&&isQE;}},
-    {type:'TDS Payment',label:'TDS Pay',rule:function(c){return c.has_employees==='yes';}},
-    {type:'PF / ESIC',label:'PF/ESIC',rule:function(c){return c.has_employees==='yes';}},
-    {type:'TDS Returns',label:'TDS Rtn',rule:function(c){return c.has_employees==='yes'&&isTQ;}},
-    {type:'Advance Tax',label:'Adv Tax',rule:function(c){return isAT&&(c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF');}},
-    {type:'ITR Filing',label:'ITR',rule:function(c){return isITR;}},
-    {type:'Tax Audit',label:'Tax Audit',rule:function(c){return isAudit&&c.turnover==='above1cr';}},
-    {type:'ROC AOC-4',label:'AOC-4',rule:function(c){return isROC&&(c.entity==='Private Limited'||c.entity==='LLP');}},
-    {type:'ROC MGT-7',label:'MGT-7',rule:function(c){return isROC&&(c.entity==='Private Limited'||c.entity==='LLP');}}
+    {type:'GSTR-1',             label:'GSTR-1',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='monthly';}},
+    {type:'GSTR-3B',            label:'GSTR-3B',   rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='monthly';}},
+    {type:'GSTR-1 (Quarterly)', label:'R1 Qtr',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&isQE;}},
+    {type:'GSTR-3B (Quarterly)',label:'3B Qtr',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&isQE;}},
+    {type:'PMT-06',             label:'PMT-06',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&!isQE;}},
+    {type:'CMP-08',             label:'CMP-08',    rule:function(c){return c.gst_type==='composition'&&isQE;}},
+    {type:'GSTR-9',             label:'GSTR-9',    rule:function(c){return hasGSTR9(c)&&isGSTR9M;}},
+    {type:'TDS Payment',        label:'TDS Pay',   rule:function(c){return hasTDS(c);}},
+    {type:'PF / ESIC',          label:'PF/ESIC',   rule:function(c){return hasPF(c);}},
+    {type:'TDS Returns',        label:'TDS Rtn',   rule:function(c){return hasTDS(c)&&isTQ;}},
+    {type:'Advance Tax',        label:'Adv Tax',   rule:function(c){return isAT&&isProp(c)&&!hasAudit(c);}},
+    {type:'ITR Filing',         label:'ITR',       rule:function(c){return isITR;}},
+    {type:'Tax Audit',          label:'Tax Audit', rule:function(c){return isAuditM&&hasAudit(c);}},
+    {type:'ROC AOC-4',          label:'AOC-4',     rule:function(c){return isROC&&isPvt(c);}},
+    {type:'ROC MGT-7',          label:'MGT-7',     rule:function(c){return isROC&&isPvt(c);}}
   ];
   return cols.filter(function(col){return CLIENTS.some(function(c){return col.rule(c);});});
 }
@@ -628,18 +749,21 @@ function genMissing() {
 
 // ---- CLIENTS ----
 var CRULES=[
-  {name:'GSTR-1',rule:function(c){return c.gst==='regular';}},
-  {name:'GSTR-3B',rule:function(c){return c.gst==='regular';}},
-  {name:'CMP-08',rule:function(c){return c.gst==='composition';}},
-  {name:'TDS Payment',rule:function(c){return c.emp==='yes';}},
-  {name:'TDS Returns',rule:function(c){return c.emp==='yes';}},
-  {name:'PF/ESIC',rule:function(c){return c.emp==='yes';}},
-  {name:'Advance Tax',rule:function(c){return c.ent==='Proprietorship'||c.ent==='Partnership'||c.ent==='HUF';}},
-  {name:'Tax Audit',rule:function(c){return c.tov==='above1cr';}},
-  {name:'ITR',rule:function(){return true;}},
-  {name:'Statutory Audit',rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}},
-  {name:'ROC AOC-4',rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}},
-  {name:'ROC MGT-7',rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}}
+  {name:'GSTR-1',       freq:'Monthly',    rule:function(c){return c.gst==='regular'&&c.gstf==='monthly';}},
+  {name:'GSTR-3B',      freq:'Monthly',    rule:function(c){return c.gst==='regular'&&c.gstf==='monthly';}},
+  {name:'GSTR-1 (Qtr)', freq:'Quarterly',  rule:function(c){return c.gst==='regular'&&c.gstf==='quarterly';}},
+  {name:'GSTR-3B (Qtr)',freq:'Quarterly',  rule:function(c){return c.gst==='regular'&&c.gstf==='quarterly';}},
+  {name:'PMT-06',        freq:'Monthly',   rule:function(c){return c.gst==='regular'&&c.gstf==='quarterly';}},
+  {name:'CMP-08',        freq:'Quarterly', rule:function(c){return c.gst==='composition';}},
+  {name:'GSTR-9',        freq:'Annual',    rule:function(c){return c.gstr9==='yes';}},
+  {name:'TDS Payment',   freq:'Monthly',   rule:function(c){return c.tds==='yes';}},
+  {name:'TDS Returns',   freq:'Quarterly', rule:function(c){return c.tds==='yes';}},
+  {name:'PF / ESIC',     freq:'Monthly',   rule:function(c){return c.pf==='yes';}},
+  {name:'Advance Tax',   freq:'4 dates',   rule:function(c){return (c.ent==='Proprietorship'||c.ent==='Partnership'||c.ent==='HUF')&&c.scheme!=='audit';}},
+  {name:'Tax Audit',     freq:'Annual',    rule:function(c){return c.scheme==='audit';}},
+  {name:'ITR',           freq:'Annual',    rule:function(c){return true;}},
+  {name:'ROC AOC-4',     freq:'Annual',    rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}},
+  {name:'ROC MGT-7',     freq:'Annual',    rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}}
 ];
 function renderClients(q) {
   if(!q) q='';
@@ -653,11 +777,13 @@ function buildCliTable(list) {
   if(!list.length){body.innerHTML='<tr><td colspan="7"><div class="emp">No clients found</div></td></tr>';return;}
   body.innerHTML=list.map(function(c){
     var freq=c.gst_type==='none'?'<span class="bdg bx">No GST</span>':c.gst_freq==='quarterly'?'<span class="bdg bp">QRMP</span>':c.gst_type==='composition'?'<span class="bdg ba">CMP</span>':'<span class="bdg bb">Monthly</span>';
+    var scheme=c.tax_scheme==='audit'?'<span class="bdg br">Audit</span>':c.tax_scheme==='presumptive'?'<span class="bdg bg">44AD</span>':'<span class="bdg bx">Regular</span>';
+    var extras=(c.tds_applicable==='yes'?'<span class="bdg bb" style="margin-left:2px">TDS</span>':'')+(c.pf_esic_applicable==='yes'?'<span class="bdg bp" style="margin-left:2px">PF</span>':'')+(c.gstr9_applicable==='yes'?'<span class="bdg ba" style="margin-left:2px">9</span>':'');
     return '<tr><td style="font-weight:500">'+esc(c.name)+'</td>'+
       '<td><span class="bdg bx">'+esc(c.entity||'')+'</span></td>'+
       '<td style="font-family:monospace;font-size:12px">'+(c.pan||'-')+'</td>'+
       '<td style="font-family:monospace;font-size:12px">'+(c.gstin||'-')+'</td>'+
-      '<td>'+freq+'</td>'+
+      '<td>'+freq+' '+scheme+extras+'</td>'+
       '<td>'+(oc(c.id)>0?'<span class="bdg ba">'+oc(c.id)+' open</span>':'<span class="bdg bg">Clear</span>')+'</td>'+
       '<td style="white-space:nowrap;display:flex;gap:4px"><button class="btn bts" onclick="openEditClient(\''+c.id+'\')">Edit</button><button class="btn bts btr" onclick="delClient(\''+c.id+'\')">Remove</button></td></tr>';
   }).join('');
@@ -667,16 +793,24 @@ function delClient(id) {
   sync(true); api('delClient',{id:id}).then(function(){CLIENTS=CLIENTS.filter(function(c){return c.id!==id;});sync(false);renderClients();fillSelects();});
 }
 function updComps() {
-  var cfg={gst:document.getElementById('cgst').value,emp:document.getElementById('cemp').value,tov:document.getElementById('ctov').value,ent:document.getElementById('cent').value};
-  var gstNone=cfg.gst==='none';
+  var gst=document.getElementById('cgst').value;
+  var gstf=document.getElementById('cgstf').value;
+  var tds=document.getElementById('ctds').value;
+  var pf=document.getElementById('cpf').value;
+  var gstr9=document.getElementById('cgstr9').value;
+  var scheme=document.getElementById('cscheme').value;
+  var ent=document.getElementById('cent').value;
+  var cfg={gst:gst,gstf:gstf,tds:tds,pf:pf,gstr9:gstr9,scheme:scheme,ent:ent};
+  var gstNone=gst==='none';
   document.getElementById('gstindiv').style.display=gstNone?'none':'block';
   document.getElementById('gstfdiv').style.display=gstNone?'none':'block';
   var on=CRULES.filter(function(r){return r.rule(cfg);});
   document.getElementById('ccnt').textContent=on.length;
   document.getElementById('cpllist').innerHTML=CRULES.map(function(r){
-    var ok=r.rule(cfg); var cid='chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_');
-    return '<div class="cpi" style="'+(ok?'':'opacity:.4')+'">'+(ok?'<input type="checkbox" id="'+cid+'" checked style="width:15px;height:15px;cursor:pointer;flex-shrink:0">':'<div style="width:15px;height:15px;background:var(--b);border-radius:3px;flex-shrink:0"></div>')+
-      '<div style="font-size:12px">'+r.name+'</div></div>';
+    var ok=r.rule(cfg);
+    var cid2='chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_');
+    return '<div class="cpi" style="'+(ok?'':'opacity:.4')+'">'+(ok?'<input type="checkbox" id="'+cid2+'" checked style="width:15px;height:15px;cursor:pointer;flex-shrink:0">':'<div style="width:15px;height:15px;background:var(--b);border-radius:3px;flex-shrink:0"></div>')+
+      '<div style="font-size:12px;flex:1">'+r.name+'</div><div style="font-size:10px;color:var(--t3)">'+r.freq+'</div></div>';
   }).join('');
 }
 function getCheckedComps() { return CRULES.filter(function(r){var el=document.getElementById('chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_'));return el&&el.checked;}).map(function(r){return r.name;}); }
@@ -686,6 +820,10 @@ function openAddClient() {
   document.getElementById('cent').value=''; document.getElementById('cgst').value='regular';
   document.getElementById('cgstf').value='monthly'; document.getElementById('cemp').value='yes';
   document.getElementById('ctov').value='above1cr';
+  document.getElementById('cscheme').value='presumptive';
+  document.getElementById('ctds').value='no';
+  document.getElementById('cpf').value='no';
+  document.getElementById('cgstr9').value='no';
   document.getElementById('cmtitle').textContent='Add Client';
   document.getElementById('csavebtn').textContent='Save Client';
   updComps(); document.getElementById('mo-client').classList.add('on');
@@ -699,10 +837,12 @@ function openEditClient(id) {
   document.getElementById('cemail').value=c.email||'';
   document.getElementById('cnotes').value=c.notes||'';
   document.getElementById('cent').value=c.entity||'';
-  document.getElementById('cgst').value=c.gst_type||c.gst||'regular';
+  document.getElementById('cgst').value=c.gst_type||'regular';
   document.getElementById('cgstf').value=c.gst_freq||'monthly';
-  document.getElementById('cemp').value=c.has_employees||c.emp||'yes';
-  document.getElementById('ctov').value=c.turnover||'above1cr';
+  document.getElementById('cscheme').value=c.tax_scheme||'presumptive';
+  document.getElementById('ctds').value=c.tds_applicable||'no';
+  document.getElementById('cpf').value=c.pf_esic_applicable||'no';
+  document.getElementById('cgstr9').value=c.gstr9_applicable||'no';
   document.getElementById('cmtitle').textContent='Edit Client';
   document.getElementById('csavebtn').textContent='Update Client';
   var existing=pArr(c.compliances);
@@ -719,10 +859,16 @@ function saveClient() {
   var short=name.split(' ').filter(function(w){return w.length>2;}).map(function(w){return w[0];}).join('').toUpperCase()||name.slice(0,6);
   var eid=document.getElementById('cid').value;
   var payload={id:eid||uid(),name:name,short_name:short,entity:entity,pan:pan,
-    gst_type:document.getElementById('cgst').value,gst_freq:document.getElementById('cgstf').value,
+    gst_type:document.getElementById('cgst').value,
+    gst_freq:document.getElementById('cgstf').value,
     gstin:document.getElementById('cgstin').value.trim().toUpperCase(),
-    has_employees:document.getElementById('cemp').value,turnover:document.getElementById('ctov').value,
-    email:document.getElementById('cemail').value.trim(),notes:document.getElementById('cnotes').value.trim(),compliances:comps};
+    tax_scheme:document.getElementById('cscheme').value,
+    tds_applicable:document.getElementById('ctds').value,
+    pf_esic_applicable:document.getElementById('cpf').value,
+    gstr9_applicable:document.getElementById('cgstr9').value,
+    has_employees:document.getElementById('ctds').value,
+    email:document.getElementById('cemail').value.trim(),
+    notes:document.getElementById('cnotes').value.trim(),compliances:comps};
   var btn=document.getElementById('csavebtn'); btn.disabled=true; btn.textContent='Saving...'; sync(true);
   api('saveClient',payload).then(function(){
     if(eid){var i=CLIENTS.findIndex(function(c){return c.id===eid;});if(i>-1)CLIENTS[i]=payload;}else CLIENTS.push(payload);
@@ -811,7 +957,8 @@ function buildMonthTable() {
     if(g==='regular'&&f==='monthly') tasks=['GSTR-1','GSTR-3B'];
     else if(g==='regular'&&f==='quarterly') tasks=isQE?['GSTR-1 Qtr','GSTR-3B Qtr']:['PMT-06'];
     else if(g==='composition'&&isQE) tasks=['CMP-08'];
-    if(emp) tasks=tasks.concat(['TDS Payment','PF/ESIC']);
+    if(c.tds_applicable==='yes') tasks=tasks.concat(['TDS Payment']);
+    if(c.pf_esic_applicable==='yes') tasks=tasks.concat(['PF/ESIC']);
     return '<tr><td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
       '<td style="font-size:11px;color:var(--t2)">'+(tasks.join(', ')||'-')+'</td>'+
       '<td><select class="btn mm-assign" data-cid="'+c.id+'" style="font-size:12px"><option value="Atik Bhayani">Atik Bhayani</option><option value="Rushiraj" selected>Rushiraj</option><option value="Sahil">Sahil</option></select></td></tr>';
@@ -837,13 +984,17 @@ function openYearModal() {
 function buildYearTable() {
   var body=document.getElementById('yrtb');
   body.innerHTML=CLIENTS.map(function(c){
-    var audit=c.turnover==='above1cr', pvt=c.entity==='Private Limited'||c.entity==='LLP';
-    var prop=c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF', emp=c.has_employees==='yes';
+    var audit=c.tax_scheme==='audit';
+    var pvt=c.entity==='Private Limited'||c.entity==='LLP';
+    var prop=c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF';
+    var hasTDS=c.tds_applicable==='yes';
+    var hasGSTR9=c.gstr9_applicable==='yes';
     var tasks=[];
     if(audit) tasks.push('ITR(Oct)','Tax Audit(Sep)'); else tasks.push('ITR(Aug)');
     if(pvt) tasks.push('AOC-4','MGT-7');
-    if(prop) tasks.push('Adv Tax x4');
-    if(emp) tasks.push('TDS Returns x4');
+    if(prop&&!audit) tasks.push('Adv Tax x4');
+    if(hasTDS) tasks.push('TDS Returns x4');
+    if(hasGSTR9) tasks.push('GSTR-9');
     return '<tr><td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
       '<td style="font-size:11px;color:var(--t2)">'+tasks.join(', ')+'</td>'+
       '<td><select class="btn yr-assign" data-cid="'+c.id+'" style="font-size:12px"><option value="Atik Bhayani" selected>Atik Bhayani</option><option value="Rushiraj">Rushiraj</option><option value="Sahil">Sahil</option></select></td></tr>';

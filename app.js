@@ -1,4 +1,4 @@
-var URL = 'https://script.google.com/macros/s/AKfycbwdwjEuAnNE3qS9ZTGbRa5Pe0CICY_Td54mpE0E-MvTMReQRSzp9w1sg_zuqnR3Z8uS/exec';
+var URL = 'https://script.google.com/macros/s/AKfycbx2fNc9ribnFkaZN5nuT4N9tSK_y5UmmHAUZCzXcCchm4EdD4Tk5cjImFGAPxQvwPJ1/exec';
 var CU = null, CLIENTS = [], TASKS = [], DOCS = [], PENDING = [];
 var TTAB = 'active', MTAB = 'active', DDCAT = 'all', TIMER = null;
 
@@ -151,9 +151,13 @@ function fillSel(id) {
 
 function getTask(id) { return TASKS.find(function(t){return t.id===id;}); }
 function findCompliance(cid,type,m,y) {
+  var pm=parseInt(m), py=parseInt(y);
   return TASKS.find(function(t){
-    return t.client_id===cid && t.compliance_type===type &&
-      parseInt(t.period_month)===parseInt(m) && parseInt(t.period_year)===parseInt(y);
+    if(t.client_id!==cid) return false;
+    if(t.compliance_type!==type) return false;
+    if(t.status==='done') return true; // done tasks block duplicates too
+    var tm=parseInt(t.period_month), ty=parseInt(t.period_year);
+    return tm===pm && ty===py;
   });
 }
 
@@ -681,7 +685,10 @@ function renderMatrix() {
       var t=findCompliance(c.id,col.type,m,y);
       var cell,bg='';
       if(!t){
-        cell='<button class="btn bts" style="font-size:10px;background:var(--rd-b);color:var(--rd);border-color:#FCA5A5" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" onclick="mxClick(this)">+ Add</button>';
+        cell='<div style="display:flex;gap:3px;justify-content:center">'+
+          '<button class="btn bts" style="font-size:10px;background:var(--rd-b);color:var(--rd);border-color:#FCA5A5;padding:3px 6px" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" data-action="create" onclick="mxClick(this)" title="Create task">+ Task</button>'+
+          '<button class="btn bts" style="font-size:10px;background:var(--gr-b);color:var(--gr);border-color:#86EFAC;padding:3px 6px" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" data-action="done" onclick="mxClick(this)" title="Mark as already filed">&#10003; Filed</button>'+
+        '</div>';
         bg='background:var(--rd-b)';
       } else if(t.status==='done'){
         cell='<span style="color:var(--gr);font-size:18px" title="'+esc(t.remarks||'')+'">&#10003;</span>'; bg='background:var(--gr-b)';
@@ -708,12 +715,26 @@ function renderMatrix() {
 }
 function mxClick(el) {
   var cid=el.dataset.cid, type=el.dataset.type, m=parseInt(el.dataset.m), y=parseInt(el.dataset.y);
+  var action=el.dataset.action||'create';
   var t=findCompliance(cid,type,m,y);
-  if(t) { if(t.status!=='done'){t.status='done';t.remarks=t.remarks||'Marked from Compliance Matrix';sync(true);api('saveTask',t).then(function(){sync(false);renderMatrix();});} }
-  else createFromMatrix(cid,type,m,y);
+  if(t) {
+    // Task exists - mark done
+    if(t.status!=='done'){
+      t.status='done'; t.remarks=t.remarks||'Marked from Compliance Matrix';
+      sync(true); api('saveTask',t).then(function(){sync(false);renderMatrix();});
+    }
+  } else {
+    if(action==='done') {
+      // Mark filed directly - create task already done
+      markFiledDirect(cid,type,m,y);
+    } else {
+      // Create pending task with assignee picker
+      createFromMatrix(cid,type,m,y);
+    }
+  }
 }
-function createFromMatrix(cid,type,m,y) {
-  if(findCompliance(cid,type,m,y)) return;
+
+function markFiledDirect(cid,type,m,y) {
   var c=gc(cid); if(!c) return;
   var nm=m===12?1:m+1, ny=m===12?y+1:y;
   var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
@@ -721,30 +742,57 @@ function createFromMatrix(cid,type,m,y) {
   var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
   var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
   var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
-  var task={id:uid(),name:type+' - '+mname+' '+y,client_id:cid,client_name:c.short_name||c.name,category:catMap(type),assignee:'Rushiraj',due_date:due,status:'pending',priority:'high',remarks:'',type:'auto',compliance_type:type,period_month:m,period_year:y,created_by:CU.name};
+  var task={id:uid(),name:type+' - '+mname+' '+y,client_id:cid,client_name:c.short_name||c.name,
+    category:catMap(type),assignee:CU.name,due_date:due,
+    status:'done',priority:'high',remarks:'Marked filed from Compliance Matrix',
+    type:'auto',compliance_type:type,period_month:m,period_year:y,created_by:CU.name};
   sync(true); TASKS.push(task);
-  api('saveTask',task).then(function(){sync(false);renderMatrix();}).catch(function(e){alert('Error: '+e.message);});
+  api('saveTask',task).then(function(){sync(false);renderMatrix();checkMissing();}).catch(function(e){alert('Error: '+e.message);});
+}
+function createFromMatrix(cid,type,m,y) {
+  if(findCompliance(cid,type,m,y)) return;
+  var c=gc(cid); if(!c) return;
+  // Show assignee picker
+  openAssignPicker(function(assignee) {
+    var nm=m===12?1:m+1, ny=m===12?y+1:y;
+    var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
+    var day=dayMap[type]||20;
+    var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
+    var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+    var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
+    var task={id:uid(),name:type+' - '+mname+' '+y,client_id:cid,client_name:c.short_name||c.name,category:catMap(type),assignee:assignee,due_date:due,status:'pending',priority:'high',remarks:'',type:'auto',compliance_type:type,period_month:m,period_year:y,created_by:CU.name};
+    if(findCompliance(cid,type,m,y)) return; // double check
+    sync(true); TASKS.push(task);
+    api('saveTask',task).then(function(){sync(false);renderMatrix();}).catch(function(e){alert('Error: '+e.message);});
+  });
 }
 function genMissing() {
   var m=parseInt(document.getElementById('mxm').value);
   var y=parseInt(document.getElementById('mxy').value);
-  var cols=getActiveCols(m,y); var created=0; var promises=[];
-  var nm=m===12?1:m+1, ny=m===12?y+1:y;
-  var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
-  var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
-  var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
-  CLIENTS.forEach(function(c){
-    cols.forEach(function(col){
-      if(!col.rule(c)||findCompliance(c.id,col.type,m,y)) return;
-      var day=dayMap[col.type]||20;
-      var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
-      var task={id:uid(),name:col.type+' - '+mname+' '+y,client_id:c.id,client_name:c.short_name||c.name,category:catMap(col.type),assignee:'Rushiraj',due_date:due,status:'pending',priority:'high',remarks:'',type:'auto',compliance_type:col.type,period_month:m,period_year:y,created_by:CU.name};
-      TASKS.push(task); promises.push(api('saveTask',task)); created++;
+  var cols=getActiveCols(m,y);
+  // Count missing first
+  var missingCount=0;
+  CLIENTS.forEach(function(c){cols.forEach(function(col){if(col.rule(c)&&!findCompliance(c.id,col.type,m,y))missingCount++;});});
+  if(!missingCount){alert('No missing tasks - all compliances have tasks.');return;}
+  // Ask assignee once for all
+  openAssignPicker(function(assignee) {
+    var nm=m===12?1:m+1, ny=m===12?y+1:y;
+    var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
+    var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+    var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
+    var created=0; var promises=[];
+    CLIENTS.forEach(function(c){
+      cols.forEach(function(col){
+        if(!col.rule(c)||findCompliance(c.id,col.type,m,y)) return;
+        var day=dayMap[col.type]||20;
+        var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
+        var task={id:uid(),name:col.type+' - '+mname+' '+y,client_id:c.id,client_name:c.short_name||c.name,category:catMap(col.type),assignee:assignee,due_date:due,status:'pending',priority:'high',remarks:'',type:'auto',compliance_type:col.type,period_month:m,period_year:y,created_by:CU.name};
+        TASKS.push(task); promises.push(api('saveTask',task)); created++;
+      });
     });
+    sync(true);
+    Promise.all(promises).then(function(){sync(false);alert(created+' tasks created and assigned to '+assignee+'.');renderMatrix();checkMissing();}).catch(function(e){sync(false);alert('Error: '+e.message);});
   });
-  if(!created){alert('No missing tasks - all compliances have tasks.');return;}
-  sync(true);
-  Promise.all(promises).then(function(){sync(false);alert(created+' tasks created.');renderMatrix();checkMissing();}).catch(function(e){sync(false);alert('Error: '+e.message);});
 }
 
 // ---- CLIENTS ----
@@ -1011,6 +1059,18 @@ function createYearTasks() {
     if(r.ok){alert('Created '+r.created+' yearly tasks for '+y); return api('getAll').then(function(a){if(a.ok){TASKS=a.tasks||[];renderDash();}});}
     else alert('Error: '+r.error);
   }).catch(function(e){sync(false);btn.disabled=false;btn.textContent='Create Tasks';alert('Error: '+e.message);});
+}
+
+
+function openAssignPicker(callback) {
+  window._assignCallback = callback;
+  document.getElementById('mo-assign').classList.add('on');
+  document.getElementById('apsel').value = 'Rushiraj';
+}
+function confirmAssign() {
+  var v = document.getElementById('apsel').value;
+  closeMo('mo-assign');
+  if (window._assignCallback) { window._assignCallback(v); window._assignCallback = null; }
 }
 
 function closeMo(id) { document.getElementById(id).classList.remove('on'); }

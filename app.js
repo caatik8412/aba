@@ -1,4 +1,4 @@
-var URL = 'https://script.google.com/macros/s/AKfycbybsy83iVARb9FqWUTUOQKg0olbqXUiCOpMj4I8u-gnT357Tm_mubHWzmHj6S16Ht8Q/exec';
+var URL = 'https://script.google.com/macros/s/AKfycbx2fNc9ribnFkaZN5nuT4N9tSK_y5UmmHAUZCzXcCchm4EdD4Tk5cjImFGAPxQvwPJ1/exec';
 var CU=null,CLIENTS=[],TASKS=[],PENDING=[];
 var TTAB='active',MTAB='active',TIMER=null;
 
@@ -105,7 +105,15 @@ function go(pg,el){
 function renderPage(pg){
   if(pg==='dash')renderDash();
   if(pg==='tasks'){fillSel('tscl');renderTasks();}
-  if(pg==='dates'){fillSel('ddcli');renderDD();}
+  if(pg==='dates'){
+    fillSel('ddcli');
+    var now=new Date();
+    var ddm=document.getElementById('ddmon');
+    var ddy=document.getElementById('ddyr');
+    if(ddm){ddm.value=now.getMonth()+1;}
+    if(ddy){ddy.value=now.getFullYear();}
+    renderDD();
+  }
   if(pg==='gst')initGST();
   if(pg==='clients')renderClients();
   if(pg==='pendoc'){fillSel('pdcl');renderPD();}
@@ -358,7 +366,7 @@ function ddMarkDone(tid,ddid){
 // TASKS
 function setTTab(tab,el){
   TTAB=tab;
-  document.querySelectorAll('#p-tasks .tab').forEach(function(t){t.classList.remove('on');});
+  document.querySelectorAll('#p-tasks .tabs .tab').forEach(function(t){t.classList.remove('on');});
   if(el)el.classList.add('on');
   var btn=document.getElementById('addtbtn');if(btn)btn.style.display=tab==='done'?'none':'block';
   renderTasks();
@@ -461,7 +469,7 @@ function saveTask(){
 // MY TASKS (Staff)
 function setMTab(tab,el){
   MTAB=tab;
-  document.querySelectorAll('#p-mine .tab').forEach(function(t){t.classList.remove('on');});
+  document.querySelectorAll('#p-mine .tabs .tab').forEach(function(t){t.classList.remove('on');});
   if(el)el.classList.add('on');renderMine();
 }
 function renderMine(){

@@ -187,7 +187,6 @@ tr:hover td{background:var(--bg)}
      <select class="btn si" id="tscl" onchange="renderTasks()"><option value="">All clients</option></select>
      <select class="btn si" id="tsas" onchange="renderTasks()"><option value="">All staff</option><option>Atik Bhayani</option><option>Rushiraj</option><option>Sahil</option></select>
      <select class="btn si" id="tscat" onchange="renderTasks()"><option value="">All categories</option><option>GST</option><option>TDS</option><option>Income Tax</option><option>ROC / MCA</option><option>PF / ESIC</option><option>Audit</option><option>Other</option></select>
-     <button class="btn btk" id="addtbtn" onclick="openTaskModal()">+ Add Task</button>
     </div>
     <div class="card" style="padding:0"><div class="tw"><table>
      <thead><tr><th></th><th>Task</th><th>Client</th><th>Category</th><th>Assignee</th><th>Due Date</th><th>Status</th><th style="min-width:160px">Remarks</th><th>Actions</th></tr></thead>
@@ -335,39 +334,6 @@ tr:hover td{background:var(--bg)}
  </div>
 </div>
 
-<!-- MONTHLY TASKS MODAL -->
-<div class="mo" id="mo-month">
- <div class="md" style="max-width:680px">
-  <div class="mh"><div><div class="mt">Create Monthly Tasks</div><div class="ms" id="mmtit"></div></div><button class="mx" onclick="closeMo('mo-month')">&#x2715;</button></div>
-  <div class="mb">
-   <div class="fr">
-    <select class="btn" id="mmm" onchange="buildMonthTable()"></select>
-    <select class="btn" id="mmy" onchange="buildMonthTable()"></select>
-    <button class="btn bts" onclick="setAllMA('Rushiraj')">All Rushiraj</button>
-    <button class="btn bts" onclick="setAllMA('Sahil')">All Sahil</button>
-    <button class="btn bts" onclick="setAllMA('Atik Bhayani')">All Atik</button>
-   </div>
-   <div class="tw"><table><thead><tr><th>Client</th><th>Tasks to Create</th><th>Assign To</th></tr></thead><tbody id="mmtb"></tbody></table></div>
-  </div>
-  <div class="mf"><button class="btn" onclick="closeMo('mo-month')">Cancel</button><button class="btn btk" id="mmbtn" onclick="createMonthTasks()">Create Tasks</button></div>
- </div>
-</div>
-
-<!-- YEARLY TASKS MODAL -->
-<div class="mo" id="mo-year">
- <div class="md" style="max-width:680px">
-  <div class="mh"><div><div class="mt">Create Yearly Tasks</div><div class="ms">ITR, Audit, ROC, Advance Tax, TDS Returns</div></div><button class="mx" onclick="closeMo('mo-year')">&#x2715;</button></div>
-  <div class="mb">
-   <div class="fr">
-    <select class="btn" id="yry"></select>
-    <button class="btn bts" onclick="setAllYA('Atik Bhayani')">All Atik</button>
-    <button class="btn bts" onclick="setAllYA('Rushiraj')">All Rushiraj</button>
-   </div>
-   <div class="tw"><table><thead><tr><th>Client</th><th>Tasks to Create</th><th>Assign To</th></tr></thead><tbody id="yrtb"></tbody></table></div>
-  </div>
-  <div class="mf"><button class="btn" onclick="closeMo('mo-year')">Cancel</button><button class="btn btk" id="yrbtn" onclick="createYearTasks()">Create Tasks</button></div>
- </div>
-</div>
 
 <script src="app.js"></script>
 </body>

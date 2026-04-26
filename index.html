@@ -207,6 +207,12 @@ tr:hover td{background:var(--bg)}
 
    <!-- DUE DATES -->
    <div class="pg" id="p-dates">
+    <div class="fr" style="margin-bottom:12px">
+     <select class="btn" id="ddcli" onchange="renderDates()" style="min-width:200px">
+      <option value="">All Clients</option>
+     </select>
+     <span style="font-size:11px;color:var(--t2)">Filter calendar by client to see applicable compliances only</span>
+    </div>
     <div class="tabs" id="dtabs">
      <div class="tab on" onclick="setDdTab('all',this)">All</div>
      <div class="tab" onclick="setDdTab('GST',this)">GST</div>
@@ -328,9 +334,11 @@ tr:hover td{background:var(--bg)}
      <div class="fi"><label>Entity Type *</label><select id="cent" onchange="updComps()"><option value="">Select</option><option>Private Limited</option><option>LLP</option><option>Proprietorship</option><option>Partnership</option><option>HUF</option></select></div>
      <div class="fi"><label>GST Type</label><select id="cgst" onchange="updComps()"><option value="regular">Regular</option><option value="composition">Composition</option><option value="none">Not Registered</option></select></div>
      <div class="fi" id="gstindiv"><label>GSTIN</label><input type="text" id="cgstin" maxlength="15" style="text-transform:uppercase"></div>
-     <div class="fi" id="gstfdiv"><label>GST Frequency</label><select id="cgstf" onchange="updComps()"><option value="monthly">Monthly</option><option value="quarterly">Quarterly QRMP</option></select></div>
-     <div class="fi"><label>Employees</label><select id="cemp" onchange="updComps()"><option value="yes">Yes</option><option value="no">No</option></select></div>
-     <div class="fi"><label>Turnover</label><select id="ctov" onchange="updComps()"><option value="above1cr">Above 1 Cr (Audit)</option><option value="above40l">40L to 1 Cr</option><option value="below40l">Below 40L</option></select></div>
+     <div class="fi" id="gstfdiv"><label>GST Frequency</label><select id="cgstf" onchange="updComps()"><option value="monthly">Monthly</option><option value="quarterly">Quarterly (QRMP)</option></select></div>
+     <div class="fi"><label>GSTR-9 Applicable</label><select id="cgstr9" onchange="updComps()"><option value="no">No</option><option value="yes">Yes</option></select></div>
+     <div class="fi"><label>Tax Scheme</label><select id="cscheme" onchange="updComps()"><option value="presumptive">Presumptive (44AD/44ADA)</option><option value="audit">Tax Audit Required</option><option value="regular">Regular (No Audit)</option></select></div>
+     <div class="fi"><label>TDS Applicable</label><select id="ctds" onchange="updComps()"><option value="no">No</option><option value="yes">Yes</option></select></div>
+     <div class="fi"><label>PF / ESIC Applicable</label><select id="cpf" onchange="updComps()"><option value="no">No</option><option value="yes">Yes</option></select></div>
      <div class="fi"><label>Email</label><input type="email" id="cemail" placeholder="email@company.com"></div>
      <div class="fi"><label>Notes</label><textarea id="cnotes" placeholder="Portal credentials, contact info..."></textarea></div>
     </div>

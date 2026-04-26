@@ -100,6 +100,11 @@ function silentRefresh(){
 }
 
 function go(pg,el){
+  // Block staff from admin pages
+  var adminOnly=['tasks','dates','gst','clients'];
+  if(CU&&CU.role==='staff'&&adminOnly.indexOf(pg)>-1){
+    go('mine',document.querySelector('#snav .ni'));return;
+  }
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('on');});
   var p=document.getElementById('p-'+pg);if(p)p.classList.add('on');

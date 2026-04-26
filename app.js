@@ -554,16 +554,38 @@ function renderGSTTable(res) {
   card.innerHTML = html;
 }
 function tickGSTRow(clientId, field, value, year, month) {
-  var key = clientId + '_' + year + '_' + month + '_' + field;
-  GST_TICKS[key] = value;
   setSyn(true);
-  api('tickGST', { client_id: clientId, field: field, value: value, year: year, month: month }).then(function() { setSyn(false); });
+  // Update checkbox visually immediately
   if (window.GST_RES) {
     window.GST_RES.rows.forEach(function(r) {
-      if (r.id === clientId) { if (field === 'r1') r.r1_filed = value; if (field === 'r3b') r.r3b_filed = value; }
+      if (r.id === clientId) {
+        if (field === 'r1')  r.r1_filed  = value;
+        if (field === 'r3b') r.r3b_filed = value;
+      }
     });
     renderGSTTable(window.GST_RES);
   }
+  // Save to sheet - sheet is source of truth
+  api('tickGST', { client_id: clientId, field: field, value: value, year: year, month: month })
+    .then(function(res) {
+      setSyn(false);
+      // Reload from server to confirm tick was saved correctly
+      return api('getGSTCompliance', { month: month, year: year });
+    })
+    .then(function(res) {
+      if (res && res.ok) {
+        window.GST_RES = res;
+        // Update local ticks cache from server
+        res.rows.forEach(function(r) {
+          var r1k = r.id + '_' + year + '_' + month + '_r1';
+          var r3k = r.id + '_' + year + '_' + month + '_r3b';
+          GST_TICKS[r1k] = r.r1_filed  || false;
+          GST_TICKS[r3k] = r.r3b_filed || false;
+        });
+        renderGSTTable(res);
+      }
+    })
+    .catch(function() { setSyn(false); });
 }
 
 function openMonthTaskModal() {

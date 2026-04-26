@@ -1,4 +1,4 @@
-var URL = 'https://script.google.com/macros/s/AKfycbwdwjEuAnNE3qS9ZTGbRa5Pe0CICY_Td54mpE0E-MvTMReQRSzp9w1sg_zuqnR3Z8uS/exec';
+var URL = 'https://script.google.com/macros/s/AKfycbxzJov8MOkiqDBD-ayIPg9ak7q6c4Mqbm9YHRoBc45FCasC4ZRGUotVGZVpecJNOY1E/exec';
 var CU = null, CLIENTS = [], TASKS = [], DOCS = [], PENDING = [];
 var TTAB = 'active', MTAB = 'active', DDCAT = 'all', TIMER = null;
 
@@ -535,9 +535,10 @@ function initGST() {
     var now=new Date(); gm.value=now.getMonth()+1;
     for(var y=2026;y<=2028;y++){var o=document.createElement('option');o.value=y;o.text=y;gy.appendChild(o);}
     gy.value=now.getFullYear();
-    loadGST();
   }
+  loadGST();
 }
+
 function loadGST() {
   var m=parseInt(document.getElementById('gstm').value);
   var y=parseInt(document.getElementById('gsty').value);
@@ -546,64 +547,542 @@ function loadGST() {
   api('getGST',{month:m,year:y}).then(function(r){
     sync(false);
     if(!r.ok){card.innerHTML='<div class="emp">Error: '+r.error+'</div>';return;}
-    r.rows.forEach(function(row){
-      GST_TICKS[row.id+'_'+y+'_'+m+'_r1']=row.r1_filed||false;
-      GST_TICKS[row.id+'_'+y+'_'+m+'_r3b']=row.r3b_filed||false;
-    });
     renderGST(r);
   }).catch(function(e){sync(false);card.innerHTML='<div class="emp">Error: '+e.message+'</div>';});
 }
+
 function renderGST(res) {
   var card=document.getElementById('gcard');
   if(!res.rows||!res.rows.length){card.innerHTML='<div class="emp">No GST clients found</div>';return;}
-  var m=res.month; var y=res.year; var mo=res.month;
   var html='<div style="margin-bottom:14px;font-size:13px;font-weight:600">GST Compliance - '+res.month+'</div>';
   html+='<div class="tw"><table><thead><tr><th>#</th><th>Client</th><th>GSTIN</th><th>Type</th><th>R1/IFF Due</th><th style="text-align:center">R1 Filed</th><th>3B/PMT Due</th><th style="text-align:center">3B Filed</th></tr></thead><tbody>';
   res.rows.forEach(function(r,i){
-    var isQ=r.gst_freq==='quarterly', isCmp=r.gst_freq==='composition';
+    var isQ=r.gst_freq==='quarterly', isCmp=r.gst_type==='composition';
     var typeBdg=isCmp?'<span class="bdg ba">CMP</span>':isQ?'<span class="bdg bp">QRMP</span>':'<span class="bdg bb">Monthly</span>';
     var r1d=r.r1Due?fmt(r.r1Due)+' ('+r.r1Label+')':'-';
     var r3d=r.r3bDue?fmt(r.r3bDue)+' ('+r.r3bLabel+')':'-';
-    var r1k=r.id+'_'+res.year+'_'+res.month+'_r1';
-    var r3k=r.id+'_'+res.year+'_'+res.month+'_r3b';
-    var r1c=GST_TICKS[r1k]||false; var r3c=GST_TICKS[r3k]||false;
-    html+='<tr'+(r1c&&(r.r3bDue===''||r3c)?' style="opacity:0.5"':'')+'>';
+    var r1c=r.r1_filed||false, r3c=r.r3b_filed||false;
+    var bothDone=r1c&&(!r.r3bDue||r3c);
+    html+='<tr'+(bothDone?' style="opacity:0.55"':'')+'>';
     html+='<td>'+(i+1)+'</td><td style="font-weight:500">'+esc(r.name)+'</td>';
     html+='<td style="font-family:monospace;font-size:11px">'+esc(r.gstin||'-')+'</td>';
     html+='<td>'+typeBdg+'</td><td style="font-size:12px">'+r1d+'</td>';
-    html+='<td style="text-align:center"><input type="checkbox" '+(r1c?'checked':'')+' onchange="tickGST(\''+r.id+'\',\'r1\',this.checked,'+res.year+','+res.month+')" style="width:18px;height:18px;cursor:pointer"></td>';
+    html+='<td style="text-align:center"><input type="checkbox" '+(r1c?'checked':'')+
+      ' data-cid="'+r.id+'" data-field="r1" data-year="'+res.year+'" data-month="'+res.month_num+'"'+
+      ' onchange="tickGST(this)" style="width:18px;height:18px;cursor:pointer"></td>';
     html+='<td style="font-size:12px">'+r3d+'</td>';
-    html+='<td style="text-align:center"><input type="checkbox" '+(r3c?'checked':'')+' onchange="tickGST(\''+r.id+'\',\'r3b\',this.checked,'+res.year+','+res.month+')" style="width:18px;height:18px;cursor:pointer"></td>';
+    html+='<td style="text-align:center"><input type="checkbox" '+(r3c?'checked':'')+
+      ' data-cid="'+r.id+'" data-field="r3b" data-year="'+res.year+'" data-month="'+res.month_num+'"'+
+      ' onchange="tickGST(this)" style="width:18px;height:18px;cursor:pointer"></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
   card.innerHTML=html;
 }
-function tickGST(cid, field, val, year, month) {
-  GST_TICKS[cid+'_'+year+'_'+month+'_'+field]=val;
-  sync(true);
-  api('tickGST',{client_id:cid,field:field,value:val,year:year,month:month}).then(function(){
-    sync(false);
-    if(val) {
-      var c=gc(cid); var isQE=(month%3===0); var f=c?(c.gst_freq||'monthly'):'monthly'; var g=c?(c.gst_type||'regular'):'regular';
-      var type;
-      if(g==='composition') type=field==='r1'?'CMP-08':null;
-      else if(f==='quarterly') { if(isQE) type=field==='r1'?'GSTR-1 (Quarterly)':'GSTR-3B (Quarterly)'; else type=field==='r1'?'IFF':'PMT-06'; }
-      else type=field==='r1'?'GSTR-1':'GSTR-3B';
-      if(type) { var t=findCompliance(cid,type,month,year); if(t){t.status='done';t.remarks=t.remarks||'Filed via GST module';api('saveTask',t);} }
-    }
-    return api('getGST',{month:month,year:year});
-  }).then(function(r){
-    if(r&&r.ok){
-      r.rows.forEach(function(row){
-        GST_TICKS[row.id+'_'+year+'_'+month+'_r1']=row.r1_filed||false;
-        GST_TICKS[row.id+'_'+year+'_'+month+'_r3b']=row.r3b_filed||false;
-      });
-      renderGST(r);
-    }
-  }).catch(function(){sync(false);});
+
+function tickGST(el) {
+  var cid=el.dataset.cid, field=el.dataset.field;
+  var year=parseInt(el.dataset.year), month=parseInt(el.dataset.month);
+  var val=el.checked;
+  el.disabled=true; sync(true);
+  api('tickGST',{client_id:cid,field:field,value:val,year:year,month:month})
+    .then(function(){
+      if(val){
+        var c=gc(cid); if(c){
+          var isQE=(month%3===0), f=c.gst_freq||'monthly', g=c.gst_type||'regular';
+          var type;
+          if(g==='composition') type=field==='r1'?'CMP-08':null;
+          else if(f==='quarterly') type=field==='r1'?(isQE?'GSTR-1 (Quarterly)':'IFF'):(isQE?'GSTR-3B (Quarterly)':'PMT-06');
+          else type=field==='r1'?'GSTR-1':'GSTR-3B';
+          if(type){ var t=findCompliance(cid,type,month,year); if(t&&t.status!=='done'){t.status='done';t.remarks=t.remarks||'Filed via GST module';api('saveTask',t);} }
+        }
+      }
+      return api('getGST',{month:month,year:year});
+    })
+    .then(function(r){
+      sync(false);
+      if(r&&r.ok) renderGST(r);
+      else el.disabled=false;
+    })
+    .catch(function(e){
+      sync(false); el.disabled=false;
+      alert('Error: '+e.message); el.checked=!val;
+    });
 }
 
+
+// ---- COMPLIANCE MATRIX ----
+function getActiveCols(m, y) {
+  var isQE=(m%3===0), isTQ=(m===7||m===10||m===1||m===5);
+  var isAT=(m===6||m===9||m===12||m===3);
+  var isITR=(m>=7&&m<=10), isAuditM=(m===9||m===10), isROC=(m===10||m===11);
+  var isGSTR9M=(m===12||m===1);
+  function hasTDS(c)   { return c.tds_applicable==='yes'; }
+  function hasPF(c)    { return c.pf_esic_applicable==='yes'; }
+  function hasAudit(c) { return c.tax_scheme==='audit'; }
+  function hasGSTR9(c) { return c.gstr9_applicable==='yes'; }
+  function isPvt(c)    { return c.entity==='Private Limited'||c.entity==='LLP'; }
+  function isProp(c)   { return c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF'; }
+  var cols=[
+    {type:'GSTR-1',             label:'GSTR-1',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='monthly';}},
+    {type:'GSTR-3B',            label:'GSTR-3B',   rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='monthly';}},
+    {type:'GSTR-1 (Quarterly)', label:'R1 Qtr',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&isQE;}},
+    {type:'GSTR-3B (Quarterly)',label:'3B Qtr',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&isQE;}},
+    {type:'PMT-06',             label:'PMT-06',    rule:function(c){return c.gst_type==='regular'&&c.gst_freq==='quarterly'&&!isQE;}},
+    {type:'CMP-08',             label:'CMP-08',    rule:function(c){return c.gst_type==='composition'&&isQE;}},
+    {type:'GSTR-9',             label:'GSTR-9',    rule:function(c){return hasGSTR9(c)&&isGSTR9M;}},
+    {type:'TDS Payment',        label:'TDS Pay',   rule:function(c){return hasTDS(c);}},
+    {type:'PF / ESIC',          label:'PF/ESIC',   rule:function(c){return hasPF(c);}},
+    {type:'TDS Returns',        label:'TDS Rtn',   rule:function(c){return hasTDS(c)&&isTQ;}},
+    {type:'Advance Tax',        label:'Adv Tax',   rule:function(c){return isAT&&isProp(c)&&!hasAudit(c);}},
+    {type:'ITR Filing',         label:'ITR',       rule:function(c){return isITR;}},
+    {type:'Tax Audit',          label:'Tax Audit', rule:function(c){return isAuditM&&hasAudit(c);}},
+    {type:'ROC AOC-4',          label:'AOC-4',     rule:function(c){return isROC&&isPvt(c);}},
+    {type:'ROC MGT-7',          label:'MGT-7',     rule:function(c){return isROC&&isPvt(c);}}
+  ];
+  return cols.filter(function(col){return CLIENTS.some(function(c){return col.rule(c);});});
+}
+
+function initMatrix() {
+  var mm=document.getElementById('mxm'), my=document.getElementById('mxy');
+  if(!mm.options.length) {
+    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    months.forEach(function(m,i){var o=document.createElement('option');o.value=i+1;o.text=m;mm.appendChild(o);});
+    var now=new Date(); mm.value=now.getMonth()+1;
+    for(var y=2026;y<=2028;y++){var o=document.createElement('option');o.value=y;o.text=y;my.appendChild(o);}
+    my.value=now.getFullYear();
+    loadMatrix();
+  }
+}
+function loadMatrix() {
+  var card=document.getElementById('mxcard');
+  card.innerHTML='<div class="emp">Loading...</div>'; sync(true);
+  api('getAll').then(function(r){
+    if(r.ok){CLIENTS=r.clients||[];TASKS=r.tasks||[];}
+    sync(false); renderMatrix();
+  }).catch(function(){sync(false);renderMatrix();});
+}
+function renderMatrix() {
+  var m=parseInt(document.getElementById('mxm').value);
+  var y=parseInt(document.getElementById('mxy').value);
+  var card=document.getElementById('mxcard');
+  var cols=getActiveCols(m,y);
+  var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  var total=0,done=0,overdue=0,pending=0,missing=0;
+  CLIENTS.forEach(function(c){cols.forEach(function(col){if(!col.rule(c)) return; total++; var t=findCompliance(c.id,col.type,m,y); if(!t)missing++; else if(t.status==='done')done++; else if(isOD(t.due_date))overdue++; else pending++;});});
+  var ccat=function(type){
+    if(type.indexOf('GSTR')>-1||type.indexOf('PMT')>-1||type.indexOf('CMP')>-1) return 'bb';
+    if(type.indexOf('TDS')>-1) return 'bg'; if(type.indexOf('PF')>-1) return 'bg';
+    if(type.indexOf('ITR')>-1||type.indexOf('Adv')>-1||type.indexOf('Audit')>-1) return 'ba';
+    if(type.indexOf('ROC')>-1||type.indexOf('AOC')>-1||type.indexOf('MGT')>-1) return 'bp'; return 'bx';
+  };
+  var html='<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+  html+='<div style="font-size:13px;font-weight:600">Compliance Control - '+mname+' '+y+'</div>';
+  html+='<span class="bdg bg">'+done+' done</span><span class="bdg ba">'+pending+' pending</span>';
+  html+='<span class="bdg br">'+overdue+' overdue</span>';
+  if(missing) html+='<span class="bdg bx">'+missing+' missing</span>';
+  html+='</div>';
+  html+='<div class="tw"><table><thead><tr><th style="min-width:130px;position:sticky;left:0;background:var(--bg)">Client</th>';
+  cols.forEach(function(col){html+='<th style="text-align:center;min-width:80px"><span class="bdg '+ccat(col.type)+'">'+col.label+'</span></th>';});
+  html+='</tr></thead><tbody>';
+  CLIENTS.forEach(function(c){
+    html+='<tr><td style="font-weight:500;position:sticky;left:0;background:var(--s)">'+esc(c.short_name||c.name)+'</td>';
+    cols.forEach(function(col){
+      if(!col.rule(c)){html+='<td style="background:var(--bg);text-align:center;color:var(--t3)">-</td>';return;}
+      var t=findCompliance(c.id,col.type,m,y);
+      var cell,bg='';
+      if(!t){
+        cell='<div style="display:flex;gap:3px;justify-content:center">'+
+          '<button class="btn bts" style="font-size:10px;background:var(--rd-b);color:var(--rd);border-color:#FCA5A5;padding:3px 6px" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" data-action="create" onclick="mxClick(this)" title="Create task">+ Task</button>'+
+          '<button class="btn bts" style="font-size:10px;background:var(--gr-b);color:var(--gr);border-color:#86EFAC;padding:3px 6px" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" data-action="done" onclick="mxClick(this)" title="Mark as already filed">&#10003; Filed</button>'+
+        '</div>';
+        bg='background:var(--rd-b)';
+      } else if(t.status==='done'){
+        cell='<span style="color:var(--gr);font-size:18px" title="'+esc(t.remarks||'')+'">&#10003;</span>'; bg='background:var(--gr-b)';
+      } else if(isOD(t.due_date)){
+        cell='<span style="color:var(--rd);font-size:11px;font-weight:600;cursor:pointer" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" onclick="mxClick(this)">OVERDUE</span>'; bg='background:var(--rd-b)';
+      } else if(isSoon(t.due_date)){
+        cell='<span style="color:var(--am);font-size:11px;cursor:pointer" data-cid="'+c.id+'" data-type="'+col.type+'" data-m="'+m+'" data-y="'+y+'" onclick="mxClick(this)">'+fmt(t.due_date)+'</span>'; bg='background:var(--am-b)';
+      } else {
+        cell='<span style="color:var(--t2);font-size:11px">'+fmt(t.due_date)+'</span>';
+      }
+      html+='<td style="text-align:center;'+bg+'">'+cell+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  if(missing){
+    html+='<div style="margin-top:14px;padding:10px 14px;background:var(--rd-b);border-radius:var(--rs);border:1px solid #FCA5A5"><div style="font-size:12px;font-weight:600;color:var(--rd);margin-bottom:6px">Missing tasks:</div>';
+    var miss=[];
+    CLIENTS.forEach(function(c){cols.forEach(function(col){if(col.rule(c)&&!findCompliance(c.id,col.type,m,y)) miss.push(esc(c.short_name||c.name)+' - '+col.label);});});
+    html+=miss.map(function(x){return '<span class="bdg br" style="margin:2px">'+x+'</span>';}).join('');
+    html+='</div>';
+  }
+  card.innerHTML=html;
+}
+function mxClick(el) {
+  var cid=el.dataset.cid, type=el.dataset.type, m=parseInt(el.dataset.m), y=parseInt(el.dataset.y);
+  var action=el.dataset.action||'create';
+  var t=findCompliance(cid,type,m,y);
+  if(t) {
+    // Task exists - mark done
+    if(t.status!=='done'){
+      t.status='done'; t.remarks=t.remarks||'Marked from Compliance Matrix';
+      sync(true); api('saveTask',t).then(function(){sync(false);renderMatrix();});
+    }
+  } else {
+    if(action==='done') {
+      // Mark filed directly - create task already done
+      markFiledDirect(cid,type,m,y);
+    } else {
+      // Create pending task with assignee picker
+      createFromMatrix(cid,type,m,y);
+    }
+  }
+}
+
+function markFiledDirect(cid,type,m,y) {
+  var c=gc(cid); if(!c) return;
+  var nm=m===12?1:m+1, ny=m===12?y+1:y;
+  var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
+  var day=dayMap[type]||20;
+  var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
+  var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
+  var task={id:uid(),name:type+' - '+mname+' '+y,client_id:cid,client_name:c.short_name||c.name,
+    category:catMap(type),assignee:CU.name,due_date:due,
+    status:'done',priority:'high',remarks:'Marked filed from Compliance Matrix',
+    type:'auto',compliance_type:type,period_month:m,period_year:y,created_by:CU.name};
+  sync(true); TASKS.push(task);
+  api('saveTask',task).then(function(){sync(false);renderMatrix();checkMissing();}).catch(function(e){alert('Error: '+e.message);});
+}
+function createFromMatrix(cid,type,m,y) {
+  if(findCompliance(cid,type,m,y)) return;
+  var c=gc(cid); if(!c) return;
+  // Show assignee picker
+  openAssignPicker(function(assignee) {
+    var nm=m===12?1:m+1, ny=m===12?y+1:y;
+    var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
+    var day=dayMap[type]||20;
+    var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
+    var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+    var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
+    var task={id:uid(),name:type+' - '+mname+' '+y,client_id:cid,client_name:c.short_name||c.name,category:catMap(type),assignee:assignee,due_date:due,status:'pending',priority:'high',remarks:'',type:'auto',compliance_type:type,period_month:m,period_year:y,created_by:CU.name};
+    if(findCompliance(cid,type,m,y)) return; // double check
+    sync(true); TASKS.push(task);
+    api('saveTask',task).then(function(){sync(false);renderMatrix();}).catch(function(e){alert('Error: '+e.message);});
+  });
+}
+function genMissing() {
+  var m=parseInt(document.getElementById('mxm').value);
+  var y=parseInt(document.getElementById('mxy').value);
+  var cols=getActiveCols(m,y);
+  // Count missing first
+  var missingCount=0;
+  CLIENTS.forEach(function(c){cols.forEach(function(col){if(col.rule(c)&&!findCompliance(c.id,col.type,m,y))missingCount++;});});
+  if(!missingCount){alert('No missing tasks - all compliances have tasks.');return;}
+  // Ask assignee once for all
+  openAssignPicker(function(assignee) {
+    var nm=m===12?1:m+1, ny=m===12?y+1:y;
+    var dayMap={'GSTR-1':11,'GSTR-3B':20,'GSTR-1 (Quarterly)':13,'GSTR-3B (Quarterly)':22,'PMT-06':25,'CMP-08':18,'TDS Payment':7,'PF / ESIC':15,'TDS Returns':31,'ITR Filing':31,'Tax Audit':30,'ROC AOC-4':30,'ROC MGT-7':29,'Advance Tax':15};
+    var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+    var catMap=function(t){if(t.indexOf('GSTR')>-1||t.indexOf('PMT')>-1||t.indexOf('CMP')>-1)return 'GST';if(t.indexOf('TDS')>-1)return 'TDS';if(t.indexOf('PF')>-1)return 'PF / ESIC';if(t.indexOf('ROC')>-1||t.indexOf('AOC')>-1||t.indexOf('MGT')>-1)return 'ROC / MCA';return 'Income Tax';};
+    var created=0; var promises=[];
+    CLIENTS.forEach(function(c){
+      cols.forEach(function(col){
+        if(!col.rule(c)||findCompliance(c.id,col.type,m,y)) return;
+        var day=dayMap[col.type]||20;
+        var due=ny+'-'+(nm<10?'0'+nm:''+nm)+'-'+(day<10?'0'+day:''+day);
+        var task={id:uid(),name:col.type+' - '+mname+' '+y,client_id:c.id,client_name:c.short_name||c.name,category:catMap(col.type),assignee:assignee,due_date:due,status:'pending',priority:'high',remarks:'',type:'auto',compliance_type:col.type,period_month:m,period_year:y,created_by:CU.name};
+        TASKS.push(task); promises.push(api('saveTask',task)); created++;
+      });
+    });
+    sync(true);
+    Promise.all(promises).then(function(){sync(false);alert(created+' tasks created and assigned to '+assignee+'.');renderMatrix();checkMissing();}).catch(function(e){sync(false);alert('Error: '+e.message);});
+  });
+}
+
+// ---- CLIENTS ----
+var CRULES=[
+  {name:'GSTR-1',       freq:'Monthly',    rule:function(c){return c.gst==='regular'&&c.gstf==='monthly';}},
+  {name:'GSTR-3B',      freq:'Monthly',    rule:function(c){return c.gst==='regular'&&c.gstf==='monthly';}},
+  {name:'GSTR-1 (Qtr)', freq:'Quarterly',  rule:function(c){return c.gst==='regular'&&c.gstf==='quarterly';}},
+  {name:'GSTR-3B (Qtr)',freq:'Quarterly',  rule:function(c){return c.gst==='regular'&&c.gstf==='quarterly';}},
+  {name:'PMT-06',        freq:'Monthly',   rule:function(c){return c.gst==='regular'&&c.gstf==='quarterly';}},
+  {name:'CMP-08',        freq:'Quarterly', rule:function(c){return c.gst==='composition';}},
+  {name:'GSTR-9',        freq:'Annual',    rule:function(c){return c.gstr9==='yes';}},
+  {name:'TDS Payment',   freq:'Monthly',   rule:function(c){return c.tds==='yes';}},
+  {name:'TDS Returns',   freq:'Quarterly', rule:function(c){return c.tds==='yes';}},
+  {name:'PF / ESIC',     freq:'Monthly',   rule:function(c){return c.pf==='yes';}},
+  {name:'Advance Tax',   freq:'4 dates',   rule:function(c){return (c.ent==='Proprietorship'||c.ent==='Partnership'||c.ent==='HUF')&&c.scheme!=='audit';}},
+  {name:'Tax Audit',     freq:'Annual',    rule:function(c){return c.scheme==='audit';}},
+  {name:'ITR',           freq:'Annual',    rule:function(c){return true;}},
+  {name:'ROC AOC-4',     freq:'Annual',    rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}},
+  {name:'ROC MGT-7',     freq:'Annual',    rule:function(c){return c.ent==='Private Limited'||c.ent==='LLP';}}
+];
+function renderClients(q) {
+  if(!q) q='';
+  var list=q?CLIENTS.filter(function(c){return c.name.toLowerCase().indexOf(q.toLowerCase())>-1||(c.pan||'').toLowerCase().indexOf(q.toLowerCase())>-1;}):CLIENTS.slice();
+  buildCliTable(list);
+}
+function filterEnt(tp) { buildCliTable(tp?CLIENTS.filter(function(c){return c.entity===tp;}):CLIENTS); }
+function buildCliTable(list) {
+  var body=document.getElementById('ctb'); if(!body) return;
+  var oc=function(id){return TASKS.filter(function(t){return t.client_id===id&&t.status!=='done';}).length;};
+  if(!list.length){body.innerHTML='<tr><td colspan="7"><div class="emp">No clients found</div></td></tr>';return;}
+  body.innerHTML=list.map(function(c){
+    var freq=c.gst_type==='none'?'<span class="bdg bx">No GST</span>':c.gst_freq==='quarterly'?'<span class="bdg bp">QRMP</span>':c.gst_type==='composition'?'<span class="bdg ba">CMP</span>':'<span class="bdg bb">Monthly</span>';
+    var scheme=c.tax_scheme==='audit'?'<span class="bdg br">Audit</span>':c.tax_scheme==='presumptive'?'<span class="bdg bg">44AD</span>':'<span class="bdg bx">Regular</span>';
+    var extras=(c.tds_applicable==='yes'?'<span class="bdg bb" style="margin-left:2px">TDS</span>':'')+(c.pf_esic_applicable==='yes'?'<span class="bdg bp" style="margin-left:2px">PF</span>':'')+(c.gstr9_applicable==='yes'?'<span class="bdg ba" style="margin-left:2px">9</span>':'');
+    return '<tr><td style="font-weight:500">'+esc(c.name)+'</td>'+
+      '<td><span class="bdg bx">'+esc(c.entity||'')+'</span></td>'+
+      '<td style="font-family:monospace;font-size:12px">'+(c.pan||'-')+'</td>'+
+      '<td style="font-family:monospace;font-size:12px">'+(c.gstin||'-')+'</td>'+
+      '<td>'+freq+' '+scheme+extras+'</td>'+
+      '<td>'+(oc(c.id)>0?'<span class="bdg ba">'+oc(c.id)+' open</span>':'<span class="bdg bg">Clear</span>')+'</td>'+
+      '<td style="white-space:nowrap;display:flex;gap:4px"><button class="btn bts" onclick="openEditClient(\''+c.id+'\')">Edit</button><button class="btn bts btr" onclick="delClient(\''+c.id+'\')">Remove</button></td></tr>';
+  }).join('');
+}
+function delClient(id) {
+  if(!confirm('Remove this client?')) return;
+  sync(true); api('delClient',{id:id}).then(function(){CLIENTS=CLIENTS.filter(function(c){return c.id!==id;});sync(false);renderClients();fillSelects();});
+}
+function updComps() {
+  var gst=document.getElementById('cgst').value;
+  var gstf=document.getElementById('cgstf').value;
+  var tds=document.getElementById('ctds').value;
+  var pf=document.getElementById('cpf').value;
+  var gstr9=document.getElementById('cgstr9').value;
+  var scheme=document.getElementById('cscheme').value;
+  var ent=document.getElementById('cent').value;
+  var cfg={gst:gst,gstf:gstf,tds:tds,pf:pf,gstr9:gstr9,scheme:scheme,ent:ent};
+  var gstNone=gst==='none';
+  document.getElementById('gstindiv').style.display=gstNone?'none':'block';
+  document.getElementById('gstfdiv').style.display=gstNone?'none':'block';
+  var on=CRULES.filter(function(r){return r.rule(cfg);});
+  document.getElementById('ccnt').textContent=on.length;
+  document.getElementById('cpllist').innerHTML=CRULES.map(function(r){
+    var ok=r.rule(cfg);
+    var cid2='chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_');
+    return '<div class="cpi" style="'+(ok?'':'opacity:.4')+'">'+(ok?'<input type="checkbox" id="'+cid2+'" checked style="width:15px;height:15px;cursor:pointer;flex-shrink:0">':'<div style="width:15px;height:15px;background:var(--b);border-radius:3px;flex-shrink:0"></div>')+
+      '<div style="font-size:12px;flex:1">'+r.name+'</div><div style="font-size:10px;color:var(--t3)">'+r.freq+'</div></div>';
+  }).join('');
+}
+function getCheckedComps() { return CRULES.filter(function(r){var el=document.getElementById('chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_'));return el&&el.checked;}).map(function(r){return r.name;}); }
+function openAddClient() {
+  document.getElementById('cid').value='';
+  ['cname','cpan','cgstin','cemail','cnotes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cent').value=''; document.getElementById('cgst').value='regular';
+  document.getElementById('cgstf').value='monthly'; document.getElementById('cemp').value='yes';
+  document.getElementById('ctov').value='above1cr';
+  document.getElementById('cscheme').value='presumptive';
+  document.getElementById('ctds').value='no';
+  document.getElementById('cpf').value='no';
+  document.getElementById('cgstr9').value='no';
+  document.getElementById('cmtitle').textContent='Add Client';
+  document.getElementById('csavebtn').textContent='Save Client';
+  updComps(); document.getElementById('mo-client').classList.add('on');
+}
+function openEditClient(id) {
+  var c=gc(id); if(!c) return;
+  document.getElementById('cid').value=c.id;
+  document.getElementById('cname').value=c.name||'';
+  document.getElementById('cpan').value=c.pan||'';
+  document.getElementById('cgstin').value=c.gstin||'';
+  document.getElementById('cemail').value=c.email||'';
+  document.getElementById('cnotes').value=c.notes||'';
+  document.getElementById('cent').value=c.entity||'';
+  document.getElementById('cgst').value=c.gst_type||'regular';
+  document.getElementById('cgstf').value=c.gst_freq||'monthly';
+  document.getElementById('cscheme').value=c.tax_scheme||'presumptive';
+  document.getElementById('ctds').value=c.tds_applicable||'no';
+  document.getElementById('cpf').value=c.pf_esic_applicable||'no';
+  document.getElementById('cgstr9').value=c.gstr9_applicable||'no';
+  document.getElementById('cmtitle').textContent='Edit Client';
+  document.getElementById('csavebtn').textContent='Update Client';
+  var existing=pArr(c.compliances);
+  updComps();
+  if(existing.length) CRULES.forEach(function(r){var el=document.getElementById('chk_'+r.name.replace(/[^a-zA-Z0-9]/g,'_'));if(el)el.checked=existing.indexOf(r.name)>-1;});
+  document.getElementById('mo-client').classList.add('on');
+}
+function saveClient() {
+  var name=document.getElementById('cname').value.trim();
+  var pan=document.getElementById('cpan').value.trim().toUpperCase();
+  var entity=document.getElementById('cent').value;
+  if(!name||!pan||!entity){alert('Please fill client name, PAN and entity type.');return;}
+  var comps=getCheckedComps();
+  var short=name.split(' ').filter(function(w){return w.length>2;}).map(function(w){return w[0];}).join('').toUpperCase()||name.slice(0,6);
+  var eid=document.getElementById('cid').value;
+  var payload={id:eid||uid(),name:name,short_name:short,entity:entity,pan:pan,
+    gst_type:document.getElementById('cgst').value,
+    gst_freq:document.getElementById('cgstf').value,
+    gstin:document.getElementById('cgstin').value.trim().toUpperCase(),
+    tax_scheme:document.getElementById('cscheme').value,
+    tds_applicable:document.getElementById('ctds').value,
+    pf_esic_applicable:document.getElementById('cpf').value,
+    gstr9_applicable:document.getElementById('cgstr9').value,
+    has_employees:document.getElementById('ctds').value,
+    email:document.getElementById('cemail').value.trim(),
+    notes:document.getElementById('cnotes').value.trim(),compliances:comps};
+  var btn=document.getElementById('csavebtn'); btn.disabled=true; btn.textContent='Saving...'; sync(true);
+  api('saveClient',payload).then(function(){
+    if(eid){var i=CLIENTS.findIndex(function(c){return c.id===eid;});if(i>-1)CLIENTS[i]=payload;}else CLIENTS.push(payload);
+    sync(false);closeMo('mo-client');renderClients();fillSelects();
+    alert((eid?'Updated':'Added')+': '+name);
+  }).catch(function(e){alert('Error: '+e.message);}).then(function(){btn.disabled=false;btn.textContent=eid?'Update Client':'Save Client';});
+}
+
+// ---- DOCS ----
+function renderDocs() {
+  var cf=(document.getElementById('doccl')||{value:''}).value;
+  var docs=DOCS.slice(); if(cf) docs=docs.filter(function(d){return d.client_id===cf;});
+  var el=document.getElementById('doclist'); if(!el) return;
+  el.innerHTML=docs.length?docs.map(function(d){
+    return '<div class="dr"><div style="width:30px;height:30px;background:var(--bl-b);color:var(--bl);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">F</div>'+
+      '<div style="flex:1"><div style="font-weight:500">'+esc(d.description)+'</div><div style="font-size:11px;color:var(--t3)">'+esc(d.client_name||'')+' - '+d.category+' - '+d.financial_year+'</div></div>'+
+      '<span class="bdg bb">'+esc(d.category)+'</span>'+
+      '<button class="btn bts btr" onclick="delDoc(\''+d.id+'\')">Remove</button></div>';
+  }).join(''):'<div class="emp">No documents recorded yet</div>';
+}
+function openDocModal() { fillSel('doccli'); document.getElementById('docdesc').value=''; document.getElementById('docfile').value=''; document.getElementById('mo-doc').classList.add('on'); }
+function saveDoc() {
+  var cid=document.getElementById('doccli').value, desc=document.getElementById('docdesc').value.trim();
+  if(!cid||!desc){alert('Select client and add description.');return;}
+  var client=gc(cid);
+  var payload={id:uid(),client_id:cid,client_name:client?(client.short_name||client.name):'',category:document.getElementById('doccat').value,financial_year:document.getElementById('docfy').value,description:desc,filename:document.getElementById('docfile').value.trim(),uploaded_by:CU.name};
+  var btn=document.getElementById('docsavebtn'); btn.disabled=true; btn.textContent='Saving...'; sync(true);
+  api('saveDoc',payload).then(function(){DOCS.unshift(payload);sync(false);closeMo('mo-doc');renderDocs();}).catch(function(e){alert('Error: '+e.message);}).then(function(){btn.disabled=false;btn.textContent='Save';});
+}
+function delDoc(id) { if(!confirm('Remove?')) return; sync(true); api('delDoc',{id:id}).then(function(){DOCS=DOCS.filter(function(d){return d.id!==id;});sync(false);renderDocs();}); }
+
+// ---- PENDING DOCS ----
+function renderPD() {
+  var fc=(document.getElementById('pdcl')||{value:''}).value;
+  var list=PENDING.slice(); if(fc) list=list.filter(function(d){return d.client_id===fc;});
+  list.sort(function(a,b){return new Date(a.needed_by||'2099-12-31')-new Date(b.needed_by||'2099-12-31');});
+  var el=document.getElementById('pdlist'); if(!el) return;
+  el.innerHTML=list.length?list.map(function(d){
+    var od=isOD(d.needed_by),sn=isSoon(d.needed_by);
+    var cls=od?'br':sn?'ba':'bx';
+    var actionBtn=d.received?'<span class="bdg bg">Received</span>':'<button class="btn bts" style="background:var(--gr-b);color:var(--gr)" onclick="markReceived(\''+d.id+'\')">Mark Received</button>';
+    return '<div class="dr"><div style="width:30px;height:30px;background:var(--am-b);color:var(--am);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">!</div>'+
+      '<div style="flex:1"><div style="font-weight:500">'+esc(d.name)+'</div><div style="font-size:11px;color:var(--t2)">'+esc(d.client_name||'')+' - '+(d.category||'')+(d.remarks?' - '+esc(d.remarks):'')+'</div></div>'+
+      '<span class="bdg '+cls+'">'+(d.needed_by?fmt(d.needed_by):'No date')+'</span>'+actionBtn+
+      '<button class="btn bts btr" onclick="delPD(\''+d.id+'\')">Del</button></div>';
+  }).join(''):'<div class="emp">No pending items</div>';
+}
+function openPDModal() { document.getElementById('pdid').value=''; document.getElementById('pdname').value=''; document.getElementById('pddue').value=''; document.getElementById('pdrm').value=''; fillSel('pdcli'); document.getElementById('mo-pd').classList.add('on'); }
+function savePD() {
+  var cid=document.getElementById('pdcli').value, name=document.getElementById('pdname').value.trim();
+  if(!cid||!name){alert('Select client and enter document name.');return;}
+  var client=gc(cid);
+  var eid=document.getElementById('pdid').value;
+  var payload={id:eid||uid(),client_id:cid,client_name:client?(client.short_name||client.name):'',name:name,category:document.getElementById('pdcat').value,needed_by:document.getElementById('pddue').value,remarks:document.getElementById('pdrm').value.trim(),received:false,created_by:CU.name};
+  var btn=document.getElementById('pdsavebtn'); btn.disabled=true; btn.textContent='Saving...'; sync(true);
+  api('savePD',payload).then(function(){
+    if(eid){var i=PENDING.findIndex(function(d){return d.id===eid;});if(i>-1)PENDING[i]=payload;}else PENDING.push(payload);
+    sync(false);closeMo('mo-pd');renderPD();renderDash();
+  }).catch(function(e){alert('Error: '+e.message);}).then(function(){btn.disabled=false;btn.textContent='Save';});
+}
+function markReceived(id) { var d=PENDING.find(function(x){return x.id===id;}); if(!d) return; d.received=true; sync(true); api('savePD',d).then(function(){sync(false);renderPD();renderDash();}); }
+function delPD(id) { if(!confirm('Delete?')) return; sync(true); api('delPD',{id:id}).then(function(){PENDING=PENDING.filter(function(d){return d.id!==id;});sync(false);renderPD();renderDash();}); }
+
+// ---- MONTHLY/YEARLY TASK MODALS ----
+function openMonthModal() {
+  var mm=document.getElementById('mmm'), my=document.getElementById('mmy');
+  if(!mm.options.length){
+    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    months.forEach(function(m,i){var o=document.createElement('option');o.value=i+1;o.text=m;mm.appendChild(o);});
+    var now=new Date(); mm.value=now.getMonth()+1;
+    for(var y=2026;y<=2028;y++){var o=document.createElement('option');o.value=y;o.text=y;my.appendChild(o);}
+    my.value=now.getFullYear();
+  }
+  buildMonthTable(); document.getElementById('mo-month').classList.add('on');
+}
+function buildMonthTable() {
+  var m=parseInt(document.getElementById('mmm').value), y=parseInt(document.getElementById('mmy').value);
+  var isQE=(m%3===0), nm=m===12?1:m+1, ny=m===12?y+1:y;
+  var mname=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  document.getElementById('mmtitle').textContent=mname+' '+y;
+  var gstCli=CLIENTS.filter(function(c){return c.gst_type&&c.gst_type!=='none';});
+  var body=document.getElementById('mmtb');
+  body.innerHTML=gstCli.map(function(c){
+    var f=c.gst_freq||'monthly', g=c.gst_type||'regular', emp=c.has_employees==='yes';
+    var tasks=[];
+    if(g==='regular'&&f==='monthly') tasks=['GSTR-1','GSTR-3B'];
+    else if(g==='regular'&&f==='quarterly') tasks=isQE?['GSTR-1 Qtr','GSTR-3B Qtr']:['PMT-06'];
+    else if(g==='composition'&&isQE) tasks=['CMP-08'];
+    if(c.tds_applicable==='yes') tasks=tasks.concat(['TDS Payment']);
+    if(c.pf_esic_applicable==='yes') tasks=tasks.concat(['PF/ESIC']);
+    return '<tr><td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
+      '<td style="font-size:11px;color:var(--t2)">'+(tasks.join(', ')||'-')+'</td>'+
+      '<td><select class="btn mm-assign" data-cid="'+c.id+'" style="font-size:12px"><option value="Atik Bhayani">Atik Bhayani</option><option value="Rushiraj" selected>Rushiraj</option><option value="Sahil">Sahil</option></select></td></tr>';
+  }).join('');
+}
+function setAllMonthAssign(name) { document.querySelectorAll('.mm-assign').forEach(function(s){s.value=name;}); }
+function createMonthTasks() {
+  var m=parseInt(document.getElementById('mmm').value), y=parseInt(document.getElementById('mmy').value);
+  var assignees={};
+  document.querySelectorAll('.mm-assign').forEach(function(s){assignees[s.dataset.cid]=s.value;});
+  var btn=document.getElementById('mmbtn'); btn.disabled=true; btn.textContent='Creating...'; sync(true);
+  api('autoTasks',{year:y,month:m,assignees:assignees}).then(function(r){
+    sync(false); btn.disabled=false; btn.textContent='Create Tasks'; closeMo('mo-month');
+    if(r.ok){alert('Created '+r.created+' tasks for '+r.month); return api('getAll').then(function(a){if(a.ok){TASKS=a.tasks||[];renderDash();}});}
+    else alert('Error: '+r.error);
+  }).catch(function(e){sync(false);btn.disabled=false;btn.textContent='Create Tasks';alert('Error: '+e.message);});
+}
+function openYearModal() {
+  var yy=document.getElementById('yry');
+  if(!yy.options.length){for(var y=2026;y<=2030;y++){var o=document.createElement('option');o.value=y;o.text='FY '+y;yy.appendChild(o);}yy.value=new Date().getFullYear();}
+  buildYearTable(); document.getElementById('mo-year').classList.add('on');
+}
+function buildYearTable() {
+  var body=document.getElementById('yrtb');
+  body.innerHTML=CLIENTS.map(function(c){
+    var audit=c.tax_scheme==='audit';
+    var pvt=c.entity==='Private Limited'||c.entity==='LLP';
+    var prop=c.entity==='Proprietorship'||c.entity==='Partnership'||c.entity==='HUF';
+    var hasTDS=c.tds_applicable==='yes';
+    var hasGSTR9=c.gstr9_applicable==='yes';
+    var tasks=[];
+    if(audit) tasks.push('ITR(Oct)','Tax Audit(Sep)'); else tasks.push('ITR(Aug)');
+    if(pvt) tasks.push('AOC-4','MGT-7');
+    if(prop&&!audit) tasks.push('Adv Tax x4');
+    if(hasTDS) tasks.push('TDS Returns x4');
+    if(hasGSTR9) tasks.push('GSTR-9');
+    return '<tr><td style="font-weight:500">'+esc(c.short_name||c.name)+'</td>'+
+      '<td style="font-size:11px;color:var(--t2)">'+tasks.join(', ')+'</td>'+
+      '<td><select class="btn yr-assign" data-cid="'+c.id+'" style="font-size:12px"><option value="Atik Bhayani" selected>Atik Bhayani</option><option value="Rushiraj">Rushiraj</option><option value="Sahil">Sahil</option></select></td></tr>';
+  }).join('');
+}
+function setAllYearAssign(name) { document.querySelectorAll('.yr-assign').forEach(function(s){s.value=name;}); }
+function createYearTasks() {
+  var y=parseInt(document.getElementById('yry').value);
+  var assignees={};
+  document.querySelectorAll('.yr-assign').forEach(function(s){assignees[s.dataset.cid]=s.value;});
+  var btn=document.getElementById('yrbtn'); btn.disabled=true; btn.textContent='Creating...'; sync(true);
+  api('yearTasks',{year:y,assignees:assignees}).then(function(r){
+    sync(false); btn.disabled=false; btn.textContent='Create Tasks'; closeMo('mo-year');
+    if(r.ok){alert('Created '+r.created+' yearly tasks for '+y); return api('getAll').then(function(a){if(a.ok){TASKS=a.tasks||[];renderDash();}});}
+    else alert('Error: '+r.error);
+  }).catch(function(e){sync(false);btn.disabled=false;btn.textContent='Create Tasks';alert('Error: '+e.message);});
+}
+
+
+function openAssignPicker(callback) {
+  window._assignCallback = callback;
+  document.getElementById('mo-assign').classList.add('on');
+  document.getElementById('apsel').value = 'Rushiraj';
+}
+function confirmAssign() {
+  var v = document.getElementById('apsel').value;
+  closeMo('mo-assign');
+  if (window._assignCallback) { window._assignCallback(v); window._assignCallback = null; }
+}
+
+function closeMo(id) { document.getElementById(id).classList.remove('on'); }
+document.addEventListener('click', function(e) { if(e.target.classList.contains('mo')) e.target.classList.remove('on'); });
+document.addEventListener('keydown', function(e) { if(e.key==='Escape') document.querySelectorAll('.mo.on').forEach(function(m){m.classList.remove('on');}); });
 // ---- COMPLIANCE MATRIX ----
 function getActiveCols(m, y) {
   var isQE=(m%3===0), isTQ=(m===7||m===10||m===1||m===5);

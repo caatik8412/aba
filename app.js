@@ -1,4 +1,4 @@
-var URL = 'https://script.google.com/macros/s/AKfycbybsy83iVARb9FqWUTUOQKg0olbqXUiCOpMj4I8u-gnT357Tm_mubHWzmHj6S16Ht8Q/exec';
+var URL = 'https://script.google.com/macros/s/AKfycbx2fNc9ribnFkaZN5nuT4N9tSK_y5UmmHAUZCzXcCchm4EdD4Tk5cjImFGAPxQvwPJ1/exec';
 var CU=null,CLIENTS=[],TASKS=[],PENDING=[];
 var TTAB='active',MTAB='active',TIMER=null;
 
@@ -75,7 +75,15 @@ function refresh(){
     if(r.ok){CLIENTS=r.clients||[];TASKS=r.tasks||[];PENDING=r.pending||[];}
     sync(false);fillSelects();
     var pg=document.querySelector('.pg.on');
-    if(pg)renderPage(pg.id.replace('p-',''));
+    if(pg){
+      var pgid=pg.id.replace('p-','');
+      // Force reload for dates since it depends on CLIENTS
+      if(pgid==='dates'){
+        var ddm=document.getElementById('ddmon');
+        if(ddm)delete ddm.dataset.init; // allow re-init
+      }
+      renderPage(pgid);
+    }
     var t=document.getElementById('stext');
     t.textContent='Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
     setTimeout(function(){t.textContent='Live';},3000);
@@ -100,7 +108,9 @@ function go(pg,el){
   document.getElementById('ptitle').textContent=titles[pg]||pg;
   var act=document.getElementById('pact');
   if(act){
-    if(pg==='clients'&&CU&&CU.role==='admin'){
+    if(pg==='tasks'){
+      act.innerHTML='<button class="btn btk" onclick="openTaskModal()">+ Add Task</button>';
+    } else if(pg==='clients'&&CU&&CU.role==='admin'){
       act.innerHTML='<button class="btn btk" onclick="openAddClient()">+ Add Client</button>';
     } else {
       act.innerHTML='';
@@ -682,6 +692,8 @@ function saveClient(){
   api('saveClient',payload).then(function(){
     if(eid){var i=CLIENTS.findIndex(function(c){return c.id===eid;});if(i>-1)CLIENTS[i]=payload;}else CLIENTS.push(payload);
     sync(false);closeMo('mo-client');renderClients();fillSelects();
+    var ddpg=document.getElementById('p-dates');
+    if(ddpg&&ddpg.classList.contains('on'))renderDD();
     alert((eid?'Updated':'Added')+': '+name);
   }).catch(function(e){alert('Error: '+e.message);}).then(function(){btn.disabled=false;btn.textContent=eid?'Update Client':'Save Client';});
 }
@@ -728,6 +740,17 @@ function delPD(id){if(!confirm('Delete?'))return;sync(true);api('delPD',{id:id})
 
 
 
+
+function openTaskModal(){
+  document.getElementById('tmtit').textContent='Add Task';
+  document.getElementById('tid').value='';document.getElementById('tddid').value='';
+  document.getElementById('tname').value='';document.getElementById('tdue').value='';
+  document.getElementById('trm').value='';document.getElementById('tsts').value='pending';
+  document.getElementById('tpri').value='medium';document.getElementById('tcat').value='GST';
+  var ad=document.getElementById('tassdiv'),as=document.getElementById('tass');
+  if(CU.role==='staff'){as.value=CU.name;ad.style.display='none';}else{ad.style.display='block';as.value='Atik Bhayani';}
+  fillSel('tcli');document.getElementById('mo-task').classList.add('on');
+}
 
 function closeMo(id){document.getElementById(id).classList.remove('on');}
 document.addEventListener('click',function(e){if(e.target.classList.contains('mo'))e.target.classList.remove('on');});

@@ -150,6 +150,7 @@ tr:hover td{background:var(--bg)}
     <div class="nvi" onclick="nav('dd',this)"><span class="nvic">D</span><span>Due Dates</span></div>
     <div class="nvsec">GST</div>
     <div class="nvi" onclick="nav('gst',this)"><span class="nvic">G</span><span>GST Compliance</span></div>
+    <div class="nvi" onclick="nav('cstatus',this)"><span class="nvic">M</span><span>Compliance Status</span></div>
     <div class="nvsec">Clients</div>
     <div class="nvi" onclick="nav('clients',this)"><span class="nvic">C</span><span>All Clients</span></div>
     <div class="nvi" onclick="openAddClient()"><span class="nvic">+</span><span>Add Client</span></div>
@@ -183,6 +184,7 @@ tr:hover td{background:var(--bg)}
 
    <!-- DASHBOARD -->
    <div class="page" id="p-dash">
+    <div id="dash-missing" style="display:none;background:var(--rd-bg);color:var(--rd);border:1px solid #FCA5A5;border-radius:var(--rs);padding:10px 16px;font-size:12px;font-weight:600;margin-bottom:14px;cursor:pointer" onclick="nav('cstatus',null)">Loading compliance check...</div>
     <div class="sg" id="dstat"></div>
     <div class="g2">
      <div class="card"><div class="ctit">Pending tasks <span class="ctr">by due date</span></div><div id="dtask"></div></div>
@@ -279,6 +281,18 @@ tr:hover td{background:var(--bg)}
      <button class="btn btnd" onclick="openAddPendingDoc()">+ Add Pending Item</button>
     </div>
     <div class="card"><div id="pdlist"></div></div>
+   </div>
+
+   <!-- COMPLIANCE STATUS -->
+   <div class="page" id="p-cstatus">
+    <div class="fr">
+     <select class="btn" id="cs-month"></select>
+     <select class="btn" id="cs-year"></select>
+     <button class="btn" onclick="loadComplianceStatus()">Load</button>
+     <button class="btn btnd" onclick="generateMissingTasks()">Generate Missing Tasks</button>
+     <span id="cs-missing-badge" style="display:none;background:var(--rd-bg);color:var(--rd);border:1px solid #FCA5A5;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600"></span>
+    </div>
+    <div class="card" id="cs-card"><div class="emp"><div class="empt">Select month and click Load</div></div></div>
    </div>
 
    <!-- MY TASKS (Staff) -->

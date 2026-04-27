@@ -318,9 +318,19 @@ function renderDD(){
   var y=parseInt(document.getElementById('ddyr').value);
   var fc=(document.getElementById('ddcli')||{value:''}).value;
   var fcat=(document.getElementById('ddcat')||{value:''}).value;
+  var fst=(document.getElementById('ddst')||{value:''}).value;
   var dues=genDueDates(m,y);
   if(fc) dues=dues.filter(function(d){return d.cid===fc;});
   if(fcat) dues=dues.filter(function(d){return d.cat===fcat;});
+  if(fst){
+    dues=dues.filter(function(d){
+      var linked=findLinkedTask(d.ddid);
+      if(fst==='done')   return linked&&linked.status==='done';
+      if(fst==='pending')return linked&&linked.status!=='done';
+      if(fst==='none')   return !linked;
+      return true;
+    });
+  }
   var body=document.getElementById('ddtb');if(!body)return;
   if(!dues.length){body.innerHTML='<tr><td colspan="7"><div class="emp">No due dates for this month</div></td></tr>';return;}
   body.innerHTML=dues.map(function(d){

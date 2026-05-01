@@ -279,10 +279,15 @@ function genDueDates(dispMonth, dispYear){
       dd(c.id,cn,'PF / ESIC | '+period,dtStr(dispYear,dispMonth,15),'PF / ESIC','PF / ESIC',pm,py);
     }
     // TDS Returns - due in Jul(Q1), Oct(Q2), Jan(Q3), May(Q4)
+    // FY for each: Jul=Q1 FY dispYear-27, Oct=Q2 FY dispYear-27, Jan=Q3 FY dispYear-26, May=Q4 FY dispYear-1 to dispYear
     if(emp&&(dispMonth===7||dispMonth===10||dispMonth===1||dispMonth===5)){
       var qmap={7:'Q1',10:'Q2',1:'Q3',5:'Q4'};
       var qday={7:31,10:31,1:31,5:31};
-      dd(c.id,cn,'TDS Return '+qmap[dispMonth]+' | FY '+py+'-'+String(py+1).slice(2),
+      // FY: May(Q4) and Jul(Q1), Oct(Q2) belong to same FY starting April
+      // May 2026 = Q4 FY 2025-26, Jul 2026 = Q1 FY 2026-27, Oct 2026 = Q2 FY 2026-27, Jan 2027 = Q3 FY 2026-27
+      var fyStart = (dispMonth===5||dispMonth===1) ? dispYear-1 : dispYear;
+      var fyEnd = fyStart+1;
+      dd(c.id,cn,'TDS Return '+qmap[dispMonth]+' | FY '+fyStart+'-'+String(fyEnd).slice(2),
         dtStr(dispYear,dispMonth,qday[dispMonth]),'TDS','TDS Returns',pm,py);
     }
     // Annual compliances shown in their due month
